@@ -1,11 +1,22 @@
 import { http, HttpResponse } from 'msw';
 
+import { checkTransition, type TransitionDenied } from '@/features/tickets/state-machine';
 import type { Schemas } from '@/lib/api/client';
 
 import { db } from '../db';
-import { users } from '../fixtures/people';
+import { mockSession, users } from '../fixtures/people';
 import { uuid } from '../fixtures/time';
 import { idempotent, ifMatchVersion, paginate, path, problem } from '../utils';
+
+const DENIED: Record<TransitionDenied, [status: number, title: string, field?: string]> = {
+  not_allowed: [409, 'เปลี่ยนเป็นสถานะนี้ไม่ได้'],
+  not_owner: [403, 'แก้ได้เฉพาะงานของตนเอง'],
+  role: [403, 'บทบาทนี้เปลี่ยนสถานะไม่ได้'],
+  reopen_expired: [409, 'เปิดงานใหม่ได้ภายใน 7 วันหลังปิดงาน'],
+  note_required: [422, 'ต้องบันทึกสิ่งที่ทำก่อนปิดงาน', 'note'],
+  photo_required: [422, 'ต้องแนบรูปหลังซ่อมก่อนปิดงาน', 'photo'],
+  reason_required: [422, 'ต้องระบุเหตุผลที่รอ', 'waitingReason'],
+};
 
 const OPEN: Schemas['TicketStatus'][] = ['new', 'assigned', 'in_progress', 'waiting'];
 
@@ -173,16 +184,19 @@ export const ticketHandlers = [
     const conflict = checkVersion(request, t);
     if (conflict) return conflict;
     const body = (await request.json()) as Schemas['TransitionRequest'];
-    if (body.to === t.status) return problem(409, 'งานอยู่ในสถานะนี้แล้ว');
-    if (body.to === 'waiting' && !body.waitingReason) {
-      return problem(422, 'ต้องระบุเหตุผลที่รอ', undefined, [
-        { field: 'waitingReason', message: 'เลือกรอลูกค้าหรือรออะไหล่' },
-      ]);
-    }
-    if (body.to === 'resolved' && t.requirePhotoOnResolve && !db.attachmentsByTicket.get(t.id)) {
-      return problem(422, 'ต้องแนบรูปหลังซ่อมก่อนปิดงาน', undefined, [
-        { field: 'photo', message: 'แนบรูปอย่างน้อย 1 รูป' },
-      ]);
+    // Same rules as the UI (features/tickets/state-machine.ts, decision D16).
+    const denied = checkTransition({
+      role: mockSession.role,
+      userId: db.me.user.id,
+      ticket: t,
+      to: body.to,
+      note: body.note,
+      waitingReason: body.waitingReason,
+      photoCount: db.attachmentsByTicket.get(t.id) ?? 0,
+    });
+    if (denied) {
+      const [status, title, field] = DENIED[denied];
+      return problem(status, title, undefined, field ? [{ field, message: title }] : undefined);
     }
     const next = idempotent(request, () =>
       save({

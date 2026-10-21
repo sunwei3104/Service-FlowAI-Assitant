@@ -41,10 +41,11 @@ export function idempotent<T>(request: Request, create: () => T): T {
 /** Cursor pagination over an in-memory array (cursor = offset, opaque to the client). */
 export function paginate<T>(items: T[], url: URL) {
   const limit = Math.min(Number(url.searchParams.get('limit') ?? 50), 100);
-  const offset = Number(url.searchParams.get('cursor') ?? 0);
+  const offset = Math.max(Number(url.searchParams.get('cursor') ?? 0), 0);
   const data = items.slice(offset, offset + limit);
-  const next = offset + limit < items.length ? String(offset + limit) : null;
-  return { data, nextCursor: next };
+  const nextCursor = offset + limit < items.length ? String(offset + limit) : null;
+  const prevCursor = offset > 0 ? String(Math.max(offset - limit, 0)) : null;
+  return { data, nextCursor, prevCursor, total: items.length };
 }
 
 /** Parse "If-Match: \"7\"" → 7. */
