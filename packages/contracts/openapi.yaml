@@ -7,7 +7,7 @@ info:
     Conventions (plan §7.2):
     - Base path /api/v1, same-origin with the web app (Caddy routes /api → services/api).
     - JSON, camelCase fields, ISO-8601 UTC timestamps, UUID ids.
-    - Cursor pagination: ?limit=50&cursor=… → { data: [...], nextCursor }. limit max 100.
+    - Cursor pagination: ?limit=50&cursor=… → { data: [...], nextCursor, prevCursor, total }. limit max 100.
     - Errors are RFC 9457 Problem Details (application/problem+json).
     - POST that creates data accepts Idempotency-Key. Updates of versioned resources require If-Match (ETag = version).
     - Every mutating request sends X-CSRF-Token (double-submit) — added by the client middleware.
@@ -45,9 +45,9 @@ paths:
       security: []
       parameters:
         - $ref: '#/components/parameters/AuthProvider'
-        - name: tenant
+        - name: invite
           in: query
-          description: Tenant slug the user is signing in to (shown on the sign-in page).
+          description: Invitation token from the invite link; the callback adds the user to that company.
           schema: { type: string }
         - name: returnTo
           in: query
@@ -66,29 +66,38 @@ paths:
       responses:
         '302': { description: Session created; redirect to returnTo or the role's home page }
         default: { $ref: '#/components/responses/Problem' }
-  /workspaces/{slug}/public:
-    get:
+  /invitation-preview:
+    post:
       tags: [auth]
-      operationId: getWorkspacePublic
-      summary: Public name of a workspace for the sign-in page ("พื้นที่ทำงาน")
-      x-draft-note: Not in plan table 17; the SignIn design shows the company name before login. Must be rate-limited and return 404 for unknown slugs (tenant enumeration risk) — backend to confirm.
+      operationId: previewInvitation
+      summary: Company name for a valid invitation link (sign-in page "พื้นที่ทำงาน")
+      description: |
+        Owner decision D15: the sign-in page shows a company name ONLY for a valid invitation token.
+        There is no public lookup by slug (prevents guessing which companies use ServiceFlow).
+        The token is sent in the body (not the URL) so it is not written to access logs.
+        Unknown, used or expired tokens → 404 with no detail. Must be rate-limited per IP.
       security: []
-      parameters:
-        - name: slug
-          in: path
-          required: true
-          schema: { type: string, pattern: '^[a-z0-9][a-z0-9-]{1,40}$' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string, minLength: 20, maxLength: 200 }
       responses:
         '200':
-          description: Public workspace info
+          description: Invitation is valid
           content:
             application/json:
               schema:
                 type: object
-                required: [slug, displayName]
+                required: [tenantName, role, expiresAt]
                 properties:
-                  slug: { type: string }
-                  displayName: { type: string }
+                  tenantName: { type: string }
+                  role: { $ref: '#/components/schemas/TenantRole' }
+                  expiresAt: { $ref: '#/components/schemas/Timestamp' }
         default: { $ref: '#/components/responses/Problem' }
   /auth/logout:
     post:
@@ -354,6 +363,16 @@ paths:
     post:
       tags: [tickets]
       operationId: transitionTicket
+      description: |
+        State machine (owner decision D16). Allowed `from → to`:
+        - new → assigned, in_progress, resolved
+        - assigned → in_progress, new (hand back)
+        - in_progress → waiting, resolved, assigned (re-assign)
+        - waiting → in_progress, resolved (waitingReason = customer | parts; SLA paused while waiting)
+        - resolved → in_progress (reopen within 7 days by Admin/Owner, or when the customer says it is not fixed)
+        Rules: Agent only on own tickets, Admin/Owner on all. `to=resolved` requires `note`, and a photo
+        when the category has requirePhotoOnResolve. `to=waiting` requires `waitingReason`.
+        Every change is written to ticket_events. Not allowed → 409; missing note/photo/reason → 422.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/IfMatch'
@@ -1482,9 +1501,12 @@ components:
 
     CursorPage:
       type: object
-      required: [nextCursor]
+      description: Cursor pagination (plan §7.2). `total` feeds "แสดง 1–10 จาก 23" (owner decision D14).
+      required: [nextCursor, prevCursor, total]
       properties:
         nextCursor: { type: [string, 'null'] }
+        prevCursor: { type: [string, 'null'] }
+        total: { type: integer, minimum: 0, description: Total items matching the filter }
 
     UserRef:
       type: object
@@ -1686,7 +1708,7 @@ components:
       properties:
         to: { $ref: '#/components/schemas/TicketStatus' }
         waitingReason: { $ref: '#/components/schemas/WaitingReason' }
-        note: { type: string, maxLength: 2000 }
+        note: { type: string, maxLength: 2000, description: Required when to=resolved }
         notifyCustomer:
           { type: boolean, default: false, description: Send the resolve message on LINE }
         partsUsed:

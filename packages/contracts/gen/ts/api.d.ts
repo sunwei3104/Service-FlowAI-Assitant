@@ -37,17 +37,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/workspaces/{slug}/public": {
+    "/invitation-preview": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Public name of a workspace for the sign-in page ("พื้นที่ทำงาน") */
-        get: operations["getWorkspacePublic"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Company name for a valid invitation link (sign-in page "พื้นที่ทำงาน")
+         * @description Owner decision D15: the sign-in page shows a company name ONLY for a valid invitation token.
+         *     There is no public lookup by slug (prevents guessing which companies use ServiceFlow).
+         *     The token is sent in the body (not the URL) so it is not written to access logs.
+         *     Unknown, used or expired tokens → 404 with no detail. Must be rate-limited per IP.
+         */
+        post: operations["previewInvitation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -213,6 +219,17 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * @description State machine (owner decision D16). Allowed `from → to`:
+         *     - new → assigned, in_progress, resolved
+         *     - assigned → in_progress, new (hand back)
+         *     - in_progress → waiting, resolved, assigned (re-assign)
+         *     - waiting → in_progress, resolved (waitingReason = customer | parts; SLA paused while waiting)
+         *     - resolved → in_progress (reopen within 7 days by Admin/Owner, or when the customer says it is not fixed)
+         *     Rules: Agent only on own tickets, Admin/Owner on all. `to=resolved` requires `note`, and a photo
+         *     when the category has requirePhotoOnResolve. `to=waiting` requires `waitingReason`.
+         *     Every change is written to ticket_events. Not allowed → 409; missing note/photo/reason → 422.
+         */
         post: operations["transitionTicket"];
         delete?: never;
         options?: never;
@@ -996,8 +1013,12 @@ export interface components {
                 message: string;
             }[];
         };
+        /** @description Cursor pagination (plan §7.2). `total` feeds "แสดง 1–10 จาก 23" (owner decision D14). */
         CursorPage: {
             nextCursor: string | null;
+            prevCursor: string | null;
+            /** @description Total items matching the filter */
+            total: number;
         };
         UserRef: {
             id: components["schemas"]["Uuid"];
@@ -1129,6 +1150,7 @@ export interface components {
         TransitionRequest: {
             to: components["schemas"]["TicketStatus"];
             waitingReason?: components["schemas"]["WaitingReason"];
+            /** @description Required when to=resolved */
             note?: string;
             /**
              * @description Send the resolve message on LINE
@@ -1575,8 +1597,8 @@ export interface operations {
     authStart: {
         parameters: {
             query?: {
-                /** @description Tenant slug the user is signing in to (shown on the sign-in page). */
-                tenant?: string;
+                /** @description Invitation token from the invite link; the callback adds the user to that company. */
+                invite?: string;
                 /** @description Relative path to return to after sign-in. Server must only accept same-origin relative paths. */
                 returnTo?: string;
             };
@@ -1619,26 +1641,31 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
-    getWorkspacePublic: {
+    previewInvitation: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                slug: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                };
+            };
+        };
         responses: {
-            /** @description Public workspace info */
+            /** @description Invitation is valid */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        slug: string;
-                        displayName: string;
+                        tenantName: string;
+                        role: components["schemas"]["TenantRole"];
+                        expiresAt: components["schemas"]["Timestamp"];
                     };
                 };
             };

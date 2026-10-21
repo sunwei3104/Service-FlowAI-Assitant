@@ -4,6 +4,56 @@
  */
 
 export interface paths {
+    "/auth/passkey/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Which Passkey step this operator needs (identity = Cloudflare Access email) */
+        get: operations["passkeyStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/passkey/register/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** (ก) First-time registration — requires the one-time bootstrap code issued by the api CLI */
+        post: operations["passkeyRegisterOptions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/passkey/register/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["passkeyRegisterVerify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/passkey/options": {
         parameters: {
             query?: never;
@@ -13,6 +63,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** (ข) Verify with Passkey — request options */
         post: operations["passkeyOptions"];
         delete?: never;
         options?: never;
@@ -29,6 +80,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * @description Owner decision D17: 3 failed verifications → locked for 15 minutes (enforced server-side).
+         *     401 Problem carries `attemptsRemaining`; while locked → 423 Problem with `lockedUntil`.
+         */
         post: operations["passkeyVerify"];
         delete?: never;
         options?: never;
@@ -418,6 +473,13 @@ export interface components {
         /** Format: date-time */
         Timestamp: string;
         Problem: {
+            /** @description Passkey verify failures left before lockout */
+            attemptsRemaining?: number;
+            /**
+             * Format: date-time
+             * @description Passkey lockout end (423)
+             */
+            lockedUntil?: string;
             /** Format: uri */
             type: string;
             title: string;
@@ -432,6 +494,20 @@ export interface components {
         };
         CursorPage: {
             nextCursor: string | null;
+            prevCursor: string | null;
+            total: number;
+        };
+        PasskeyStatus: {
+            /**
+             * Format: email
+             * @description From the Cloudflare Access JWT
+             */
+            email: string;
+            /** @description false → show the bootstrap-code registration step */
+            registered: boolean;
+            /** Format: date-time */
+            lockedUntil: string | null;
+            attemptsRemaining: number;
         };
         /** @enum {string} */
         PlatformRole: "platform_owner" | "platform_support" | "platform_readonly";
@@ -688,6 +764,81 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    passkeyStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyStatus"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    passkeyRegisterOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    bootstrapCode: string;
+                };
+            };
+        };
+        responses: {
+            /** @description WebAuthn creation options (opaque JSON passed to the browser API) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    passkeyRegisterVerify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Passkey saved; bootstrap code consumed; console session created */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     passkeyOptions: {
         parameters: {
             query?: never;
