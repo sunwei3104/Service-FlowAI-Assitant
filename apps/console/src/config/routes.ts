@@ -10,3 +10,15 @@ export const routes = {
   supportAccess: () => '/support-access',
   audit: () => '/audit',
 } as const;
+
+export const authRoutes = {
+  passkey: (returnTo?: string) =>
+    returnTo ? `/passkey?returnTo=${encodeURIComponent(returnTo)}` : '/passkey',
+} as const;
+
+/** Only same-origin relative paths are allowed as a post-login return target (open-redirect guard). */
+export function safeReturnTo(value: string | null | undefined): string | undefined {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\'))
+    return undefined;
+  return value;
+}

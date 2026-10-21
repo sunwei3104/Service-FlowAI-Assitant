@@ -17,6 +17,7 @@ function seed() {
     queue: buildDeadJobs(),
     grants: [] as (Schemas['SupportAccessGrant'] & { tenantId: string })[],
     idempotency: new Map<string, unknown>(),
+    passkey: { registered: true, failures: 0, lockedUntil: null as string | null },
   };
 }
 

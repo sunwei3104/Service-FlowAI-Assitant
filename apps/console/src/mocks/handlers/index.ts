@@ -6,9 +6,68 @@ import { db } from '../db';
 import { daysAgo, minutesAgo } from '../fixtures/time';
 import { idempotent, paginate, path, problem } from '../utils';
 
+const MAX_PASSKEY_FAILURES = 3;
+const LOCK_MINUTES = 15;
+const passkeyLocked = () =>
+  db.passkey.lockedUntil !== null && new Date(db.passkey.lockedUntil) > new Date();
+const lockedProblem = () =>
+  new Response(
+    JSON.stringify({
+      type: 'about:blank',
+      title: 'ล็อกชั่วคราว',
+      status: 423,
+      lockedUntil: db.passkey.lockedUntil,
+    }),
+    { status: 423, headers: { 'Content-Type': 'application/problem+json' } },
+  );
+
 const findTenant = (id: unknown) => db.tenants.find((t) => t.id === id);
 
 export const handlers = [
+  // Passkey (decision D17). Mock bootstrap code: MOCK-BOOTSTRAP. Body {fail:true} simulates a wrong key.
+  http.get(path('/auth/passkey/status'), () =>
+    HttpResponse.json<Schemas['PasskeyStatus']>({
+      email: 'sun@serviceflow.example',
+      registered: db.passkey.registered,
+      lockedUntil: db.passkey.lockedUntil,
+      attemptsRemaining: Math.max(MAX_PASSKEY_FAILURES - db.passkey.failures, 0),
+    }),
+  ),
+  http.post(path('/auth/passkey/register/options'), async ({ request }) => {
+    const { bootstrapCode } = (await request.json()) as { bootstrapCode: string };
+    if (bootstrapCode !== 'MOCK-BOOTSTRAP') return problem(422, 'bootstrap code ไม่ถูกต้อง');
+    return HttpResponse.json({ challenge: 'mock' });
+  }),
+  http.post(path('/auth/passkey/register/verify'), () => {
+    db.passkey = { registered: true, failures: 0, lockedUntil: null };
+    return new HttpResponse(null, { status: 204 });
+  }),
+  http.post(path('/auth/passkey/options'), () =>
+    passkeyLocked() ? lockedProblem() : HttpResponse.json({ challenge: 'mock' }),
+  ),
+  http.post(path('/auth/passkey/verify'), async ({ request }) => {
+    if (passkeyLocked()) return lockedProblem();
+    const body = (await request.json()) as { fail?: boolean };
+    if (body.fail) {
+      db.passkey.failures += 1;
+      if (db.passkey.failures >= MAX_PASSKEY_FAILURES) {
+        db.passkey.lockedUntil = new Date(Date.now() + LOCK_MINUTES * 60_000).toISOString();
+        return lockedProblem();
+      }
+      return new Response(
+        JSON.stringify({
+          type: 'about:blank',
+          title: 'Passkey ไม่ถูกต้อง',
+          status: 401,
+          attemptsRemaining: MAX_PASSKEY_FAILURES - db.passkey.failures,
+        }),
+        { status: 401, headers: { 'Content-Type': 'application/problem+json' } },
+      );
+    }
+    db.passkey.failures = 0;
+    return new HttpResponse(null, { status: 204 });
+  }),
+
   http.get(path('/me'), () => HttpResponse.json(db.operator)),
   http.get(path('/overview'), () => HttpResponse.json(db.overview)),
   http.get(path('/alerts'), () => HttpResponse.json({ data: db.alerts })),

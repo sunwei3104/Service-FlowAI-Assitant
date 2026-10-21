@@ -11,5 +11,7 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
+    // Tests run against the MSW mock API (same handlers as dev).
+    env: { NEXT_PUBLIC_API_MOCKING: 'enabled' },
   },
 });
