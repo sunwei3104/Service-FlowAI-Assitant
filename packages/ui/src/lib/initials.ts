@@ -1,20 +1,19 @@
-// Avatar initials. Thai: first two consonants, skipping leading vowels/marks (นภา วงศ์ดี → นภ).
-// Latin: first letter of the first two words (Sun Tinakorn → ST).
-// NOTE: the designs' hand-written initials are not fully consistent (see docs/PROJECT.md).
+// Avatar initials — owner decision D18:
+// Thai: first two consonants of the FIRST name, skipping vowels and tone marks
+//   (นภา วงศ์ดี → นภ, ทินกร (Sun) → ทน, สมชาย → สม, วิชัย → วช).
+// Latin: first letter of the first name + first letter of the last name (Sun Tinakorn → ST).
 const THAI_CONSONANT = /[ก-ฮ]/;
 
 export function initials(name: string): string {
-  const trimmed = name.trim();
-  if (!trimmed) return '?';
-  if (THAI_CONSONANT.test(trimmed)) {
-    return Array.from(trimmed)
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  const first = words[0];
+  if (!first) return '?';
+  if (THAI_CONSONANT.test(first)) {
+    return Array.from(first)
       .filter((ch) => THAI_CONSONANT.test(ch))
       .slice(0, 2)
       .join('');
   }
-  return trimmed
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('');
+  const last = words.length > 1 ? words[words.length - 1] : undefined;
+  return `${first[0] ?? ''}${last?.[0] ?? ''}`.toUpperCase();
 }

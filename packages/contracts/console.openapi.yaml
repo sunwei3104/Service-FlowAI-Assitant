@@ -22,10 +22,59 @@ tags:
   - name: audit
 
 paths:
+  /auth/passkey/status:
+    get:
+      tags: [auth]
+      operationId: passkeyStatus
+      summary: Which Passkey step this operator needs (identity = Cloudflare Access email)
+      security: []
+      responses:
+        '200':
+          description: Status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PasskeyStatus' }
+        default: { $ref: '#/components/responses/Problem' }
+  /auth/passkey/register/options:
+    post:
+      tags: [auth]
+      operationId: passkeyRegisterOptions
+      summary: (ก) First-time registration — requires the one-time bootstrap code issued by the api CLI
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bootstrapCode]
+              properties:
+                bootstrapCode: { type: string, minLength: 6, maxLength: 64, writeOnly: true }
+      responses:
+        '200':
+          description: WebAuthn creation options (opaque JSON passed to the browser API)
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        default: { $ref: '#/components/responses/Problem' }
+  /auth/passkey/register/verify:
+    post:
+      tags: [auth]
+      operationId: passkeyRegisterVerify
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '204': { description: 'Passkey saved; bootstrap code consumed; console session created' }
+        default: { $ref: '#/components/responses/Problem' }
   /auth/passkey/options:
     post:
       tags: [auth]
       operationId: passkeyOptions
+      summary: (ข) Verify with Passkey — request options
       security: []
       responses:
         '200':
@@ -38,6 +87,9 @@ paths:
     post:
       tags: [auth]
       operationId: passkeyVerify
+      description: |
+        Owner decision D17: 3 failed verifications → locked for 15 minutes (enforced server-side).
+        401 Problem carries `attemptsRemaining`; while locked → 423 Problem with `lockedUntil`.
       security: []
       requestBody:
         required: true
@@ -508,6 +560,9 @@ components:
       type: object
       required: [type, title, status]
       properties:
+        attemptsRemaining:
+          { type: integer, description: Passkey verify failures left before lockout }
+        lockedUntil: { type: string, format: date-time, description: Passkey lockout end (423) }
         type: { type: string, format: uri }
         title: { type: string }
         status: { type: integer }
@@ -524,10 +579,21 @@ components:
               message: { type: string }
     CursorPage:
       type: object
-      required: [nextCursor]
+      required: [nextCursor, prevCursor, total]
       properties:
         nextCursor: { type: [string, 'null'] }
+        prevCursor: { type: [string, 'null'] }
+        total: { type: integer, minimum: 0 }
 
+    PasskeyStatus:
+      type: object
+      required: [email, registered, lockedUntil, attemptsRemaining]
+      properties:
+        email: { type: string, format: email, description: From the Cloudflare Access JWT }
+        registered:
+          { type: boolean, description: false → show the bootstrap-code registration step }
+        lockedUntil: { type: [string, 'null'], format: date-time }
+        attemptsRemaining: { type: integer, minimum: 0, maximum: 3 }
     PlatformRole:
       type: string
       enum: [platform_owner, platform_support, platform_readonly]

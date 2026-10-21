@@ -23,3 +23,11 @@ test('console shell: every menu item opens a page (none 404)', async ({ page }) 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   }
 });
+
+test('passkey page (decision D17) is accessible', async ({ page }) => {
+  await page.goto('/passkey');
+  await expect(page.getByRole('heading', { name: 'ยืนยันด้วย Passkey' })).toBeVisible();
+  await expectNoA11yViolations(page);
+  await page.getByRole('button', { name: 'ยืนยันด้วย Passkey' }).click();
+  await expect(page).toHaveURL(/\/$/);
+});

@@ -1,4 +1,4 @@
-// Guard for the project rule: "no raw color values in code — use tokens from docs/design/tokens.json".
+// Guard for the project rules: no raw colors and no off-scale font sizes — use tokens from docs/design/tokens.json.
 // Fails (exit 1) when source files contain hex/rgb/hsl colors, Tailwind default palette classes,
 // or arbitrary color classes like bg-[#fff]. Generated token files are the only exception.
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -16,6 +16,8 @@ const RULES = [
   { name: 'hex color', re: /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3})(?![\w-])/g },
   { name: 'rgb/hsl/oklch color', re: /\b(?:rgba?|hsla?|oklch|oklab)\(/g },
   { name: 'arbitrary color class', re: /-\[(?:#|rgb|hsl|oklch)/g },
+  // Type scale is fixed by the owner (decision D11): only text-<token> classes.
+  { name: 'arbitrary font size', re: /\btext-\[\d+(?:\.\d+)?(?:px|rem|em)\]/g },
   { name: 'Tailwind default palette', re: new RegExp(`\\b[a-z]+-(?:${PALETTE})-\\d{2,3}\\b`, 'g') },
   {
     name: 'black/white keyword class',

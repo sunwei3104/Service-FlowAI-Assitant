@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw';
 import type { Schemas } from '@/lib/api/client';
 
 import { db } from '../db';
-import { TENANT } from '../fixtures/people';
+import { MOCK_INVITE_TOKEN } from '../fixtures/people';
 import { path, problem } from '../utils';
 
 export const sessionHandlers = [
@@ -24,11 +24,16 @@ export const sessionHandlers = [
     return HttpResponse.json({ available });
   }),
 
-  http.get(path('/workspaces/:slug/public'), ({ params }) =>
-    params.slug === TENANT.slug
-      ? HttpResponse.json({ slug: TENANT.slug, displayName: 'สมาร์ทเวนด์' })
-      : problem(404, 'ไม่พบพื้นที่ทำงาน'),
-  ),
+  // Only a valid invitation token reveals the company name (decision D15).
+  http.post(path('/invitation-preview'), async ({ request }) => {
+    const { token } = (await request.json()) as { token: string };
+    if (token !== MOCK_INVITE_TOKEN) return problem(404, 'Not found');
+    return HttpResponse.json({
+      tenantName: 'สมาร์ทเวนด์',
+      role: 'agent' as const,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60_000).toISOString(),
+    });
+  }),
 
   http.post(path('/auth/logout'), () => new HttpResponse(null, { status: 204 })),
 ];

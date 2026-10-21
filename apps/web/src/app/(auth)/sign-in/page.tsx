@@ -1,28 +1,25 @@
 // Sign-in — built from docs/design/html/SignIn.html (PNG: docs/design/png/SignIn.png).
-// Font sizes 15/16/20/28/36px are not in the tokens type scale yet (docs/PROJECT.md "คำถามค้าง").
 import { icons, LogoMark } from '@serviceflow/ui/icons';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
-import { routes, safeReturnTo } from '@/config/routes';
-import { signInUrl } from '@/features/auth/api';
-import { WorkspaceLine } from '@/features/auth/components/workspace-line';
+import { safeReturnTo } from '@/config/routes';
+import { INVITE_TOKEN, signInUrl } from '@/features/auth/api';
+import { InvitationWorkspace } from '@/features/auth/components/invitation-workspace';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('pages');
   return { title: t('signIn') };
 }
 
-const SLUG = /^[a-z0-9][a-z0-9-]{1,40}$/;
-
 export default async function SignInPage({ searchParams }: PageProps<'/sign-in'>) {
   const t = await getTranslations('signIn');
   const tShell = await getTranslations('shell');
   const query = await searchParams;
-  const tenantParam =
-    typeof query.tenant === 'string' && SLUG.test(query.tenant) ? query.tenant : undefined;
+  // Company name only from a valid invitation link (decision D15) — never from a public ?tenant= param.
+  const invite =
+    typeof query.invite === 'string' && INVITE_TOKEN.test(query.invite) ? query.invite : undefined;
   const returnTo = safeReturnTo(typeof query.returnTo === 'string' ? query.returnTo : undefined);
 
   const features: { icon: ReactNode; title: string; body: string }[] = [
@@ -51,13 +48,11 @@ export default async function SignInPage({ searchParams }: PageProps<'/sign-in'>
       >
         <div className="flex items-center gap-3">
           <LogoMark size={40} />
-          <span className="text-[20px] font-bold">{tShell('brandName')}</span>
+          <span className="text-mobile-title">{tShell('brandName')}</span>
         </div>
         <div className="mt-auto flex max-w-[520px] flex-col gap-4">
-          <h1 className="m-0 text-[36px] font-bold leading-[1.3]">
-            {t.rich('headline', { br: () => <br /> })}
-          </h1>
-          <p className="text-sidebar-link m-0 text-[16px]">{t('lead')}</p>
+          <h1 className="text-display m-0">{t.rich('headline', { br: () => <br /> })}</h1>
+          <p className="text-sidebar-link text-body-lg m-0">{t('lead')}</p>
         </div>
         <ul className="m-0 mb-auto flex max-w-[520px] list-none flex-col gap-3.5 p-0">
           {features.map((f) => (
@@ -85,22 +80,22 @@ export default async function SignInPage({ searchParams }: PageProps<'/sign-in'>
       >
         <div className="flex w-full max-w-[420px] flex-col gap-5">
           <div>
-            <h2 className="m-0 text-[28px] font-bold leading-[1.3]">{t('title')}</h2>
-            {tenantParam ? <WorkspaceLine slug={tenantParam} /> : null}
+            <h2 className="text-auth-title m-0">{t('title')}</h2>
+            {invite ? <InvitationWorkspace token={invite} /> : null}
           </div>
 
           <div className="flex flex-col gap-3">
             {/* Plain <a>: full-page navigation to the OIDC start URL (the provider redirects the browser). */}
             <a
-              href={signInUrl('line', { tenant: tenantParam, returnTo })}
-              className="h-13 bg-navy text-on-primary hover:text-on-primary inline-flex items-center justify-center gap-2.5 rounded-md text-[15px] font-semibold no-underline"
+              href={signInUrl('line', { invite, returnTo })}
+              className="h-13 bg-navy text-on-primary hover:text-on-primary text-body-lg inline-flex items-center justify-center gap-2.5 rounded-md font-semibold no-underline"
             >
               <icons.chat size={20} />
               {t('withLine')}
             </a>
             <a
-              href={signInUrl('google', { tenant: tenantParam, returnTo })}
-              className="h-13 border-control-border bg-surface-000 text-ink hover:text-ink inline-flex items-center justify-center gap-2.5 rounded-md border text-[15px] font-semibold no-underline"
+              href={signInUrl('google', { invite, returnTo })}
+              className="h-13 border-control-border bg-surface-000 text-ink hover:text-ink text-body-lg inline-flex items-center justify-center gap-2.5 rounded-md border font-semibold no-underline"
             >
               <icons.google size={20} />
               {t('withGoogle')}
@@ -109,12 +104,7 @@ export default async function SignInPage({ searchParams }: PageProps<'/sign-in'>
 
           <p className="text-body-sm text-ink-muted m-0">
             {t.rich('technicianHint', {
-              link: (chunks) =>
-                tenantParam ? (
-                  <Link href={routes.field.jobs(tenantParam)}>{chunks}</Link>
-                ) : (
-                  <span>{chunks}</span>
-                ),
+              link: (chunks) => <strong className="font-semibold">{chunks}</strong>,
             })}
           </p>
 
@@ -122,7 +112,7 @@ export default async function SignInPage({ searchParams }: PageProps<'/sign-in'>
             aria-labelledby="h-nopw"
             className="border-hairline bg-surface-000 mt-2 flex flex-col gap-2 rounded-lg border p-4"
           >
-            <h3 id="h-nopw" className="m-0 flex items-center gap-2 text-[15px] font-semibold">
+            <h3 id="h-nopw" className="text-body-lg m-0 flex items-center gap-2 font-semibold">
               <icons.lock size={18} strokeWidth={2} className="text-primary" />
               {t('noPasswordTitle')}
             </h3>

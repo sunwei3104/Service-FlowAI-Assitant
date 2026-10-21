@@ -19,8 +19,6 @@
     "forbiddenDescription": "บทบาทของคุณบนแพลตฟอร์มไม่มีสิทธิ์ดูหน้านี้",
     "notFoundTitle": "ไม่พบหน้านี้",
     "notFoundDescription": "ลิงก์อาจไม่ถูกต้อง หรือข้อมูลนี้ถูกลบไปแล้ว",
-    "sessionRequiredTitle": "ต้องยืนยันตัวตนด้วย Passkey",
-    "sessionRequiredDescription": "เซสชันคอนโซลหมดอายุหรือยังไม่ได้ยืนยัน Passkey (หน้ายืนยัน Passkey ยังไม่มีแบบ)",
     "pendingTitle": "หน้านี้ยังไม่ได้สร้างตามแบบ",
     "pendingDescription": "โครงสร้างและ service พร้อมแล้ว รอสร้าง UI ตามแบบ {design}"
   },
@@ -61,6 +59,31 @@
     "system": "สุขภาพระบบและต้นทุน",
     "ai": "AI และต้นทุน",
     "supportAccess": "การเข้าช่วยเหลือ",
-    "audit": "Audit log"
+    "audit": "Audit log",
+    "passkey": "ยืนยันตัวตน"
+  },
+  "passkey": {
+    "pageTitle": "ยืนยันตัวตนผู้ดูแลระบบ",
+    "aboutLabel": "เกี่ยวกับคอนโซล",
+    "headline": "คอนโซลเจ้าของระบบ<br></br>ต้องยืนยันสองชั้นทุกครั้ง",
+    "lead": "ผ่าน Cloudflare Access ด้วยบัญชีทีมแล้ว ยืนยันอีกชั้นด้วย Passkey บนอุปกรณ์ของคุณ",
+    "point1": "ไม่มีรหัสผ่าน ใช้คีย์บนอุปกรณ์หรือ security key",
+    "point2": "ทุกการเข้าดูข้อมูลบริษัทลูกค้าต้องได้รับอนุมัติและถูกบันทึก",
+    "point3": "ยืนยันผิด 3 ครั้ง ระบบล็อก 15 นาที",
+    "signedInAs": "บัญชี:",
+    "verifyTitle": "ยืนยันด้วย Passkey",
+    "verifyBody": "กดปุ่มด้านล่าง แล้วยืนยันด้วยลายนิ้วมือ ใบหน้า หรือ security key",
+    "verifyButton": "ยืนยันด้วย Passkey",
+    "registerTitle": "ลงทะเบียน Passkey ครั้งแรก",
+    "registerBody": "กรอก bootstrap code ที่ได้จากคำสั่ง CLI ของ api (ใช้ได้ครั้งเดียว) แล้วสร้าง Passkey บนอุปกรณ์นี้",
+    "bootstrapLabel": "Bootstrap code",
+    "bootstrapRequired": "กรอก bootstrap code",
+    "registerButton": "ลงทะเบียน Passkey",
+    "working": "กำลังยืนยัน…",
+    "failed": "ยืนยันไม่สำเร็จ เหลืออีก {count} ครั้งก่อนถูกล็อก",
+    "cancelled": "ยกเลิกการยืนยันแล้ว ลองอีกครั้งได้",
+    "bootstrapInvalid": "bootstrap code ไม่ถูกต้องหรือถูกใช้ไปแล้ว",
+    "lockedTitle": "ล็อกชั่วคราว",
+    "lockedBody": "ยืนยันผิดครบ 3 ครั้ง ลองใหม่ได้หลังเวลา {time} น."
   }
 }

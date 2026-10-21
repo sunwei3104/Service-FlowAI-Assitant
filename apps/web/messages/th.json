@@ -32,10 +32,13 @@
     "searchLabel": "ค้นหา",
     "searchPlaceholder": "ค้นหาเลข Ticket, รหัสเครื่อง, ชื่อลูกค้า",
     "createTicket": "สร้าง Ticket",
-    "notifications": "การแจ้งเตือน {count, plural, =0 {ไม่มีรายการใหม่} other {# รายการ}}",
     "myAccount": "บัญชีของฉัน: {name}",
     "switchTenant": "เปลี่ยนบริษัท",
-    "ticketsBadge": "{count} งานใหม่ที่ยังไม่มอบหมาย"
+    "ticketsBadge": "{count} งานใหม่ที่ยังไม่มอบหมาย",
+    "accountMenu": "เมนูบัญชี",
+    "signOut": "ออกจากระบบ",
+    "signOutAll": "ออกจากระบบทุกอุปกรณ์",
+    "switchTenantTo": "สลับไป {name}"
   },
   "roles": {
     "owner": "Owner",
@@ -77,9 +80,6 @@
     "history": "ประวัติ",
     "account": "บัญชี"
   },
-  "auth": {
-    "signOut": "ออกจากระบบ"
-  },
   "field": {
     "greeting": "สวัสดี {name} · {date}"
   },
@@ -96,12 +96,17 @@
     "copyright": "© 2569 ServiceFlow AI",
     "title": "เข้าสู่ระบบ",
     "workspace": "พื้นที่ทำงาน:",
-    "changeCompany": "เปลี่ยนบริษัท",
     "withLine": "เข้าสู่ระบบด้วย LINE",
     "withGoogle": "เข้าสู่ระบบด้วย Google",
     "technicianHint": "ช่างใช้ปุ่ม LINE แล้วระบบพาไปหน้า <link>งานของฉัน</link> ให้อัตโนมัติ · ยังไม่มีบัญชี ขอคำเชิญจาก Admin ของบริษัท",
     "noPasswordTitle": "ระบบไม่เก็บรหัสผ่าน",
     "noPasswordBody": "ยืนยันตัวตนผ่านบัญชี LINE หรือ Google ที่ใช้อยู่แล้ว แนะนำให้เปิดยืนยัน 2 ขั้นในบัญชีนั้น",
     "idleTimeout": "ไม่ได้ใช้งาน 12 ชั่วโมง ระบบออกจากระบบให้อัตโนมัติ (บริษัทตั้งให้สั้นกว่านี้ได้)"
+  },
+  "settings": {
+    "tabsLabel": "หมวดการตั้งค่า",
+    "company": "ข้อมูลบริษัท",
+    "plan": "แพ็กเกจ",
+    "profile": "โปรไฟล์"
   }
 }

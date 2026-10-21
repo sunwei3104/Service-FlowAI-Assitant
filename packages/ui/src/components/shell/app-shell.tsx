@@ -55,8 +55,8 @@ export function SidebarBrand({
     <div className="flex items-center gap-2.5 px-1 pt-1">
       <LogoMark variant={variant} />
       <div className="flex flex-col leading-[1.2]">
-        {/* 16px: not in tokens type scale yet — see docs/PROJECT.md "คำถามค้าง" */}
-        <span className="text-[16px] font-bold">{name}</span>
+        {/* design 16px → body-lg (15px) per owner decision D11 */}
+        <span className="text-body-lg font-bold">{name}</span>
         <span
           className={cn(
             'text-caption leading-[1.2]',

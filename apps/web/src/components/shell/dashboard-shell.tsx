@@ -97,13 +97,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               {t('shell.createTicket')}
             </Link>
           ) : null}
-          <button
-            type="button"
-            aria-label={t('shell.notifications', { count: 0 })}
-            className="border-hairline bg-surface-000 text-ink-muted relative inline-flex size-11 items-center justify-center rounded-md border"
-          >
-            <icons.bell />
-          </button>
+          {/* Bell hidden: no in-app notifications in MVP — staff are notified on LINE via the outbox (decision D17). */}
           <AccountMenu />
         </Topbar>
       }
