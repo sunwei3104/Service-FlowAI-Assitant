@@ -18,6 +18,9 @@ export const users = {
   anan: { id: uuid('user', 5), displayName: 'อนันต์ ท.', avatarUrl: null },
 } satisfies Record<string, Schemas['UserRef']>;
 
+/** Invite link for local testing: /sign-in?invite=<this>. Any other token → 404. */
+export const MOCK_INVITE_TOKEN = 'mock-invite-token-smartvend-0001';
+
 /** Which signed-in user the mock API pretends to be. Switch to `somchai` to see the technician flow. */
 export const mockSession = {
   user: users.napa,
@@ -26,7 +29,7 @@ export const mockSession = {
 
 export function buildMe(): Schemas['Me'] {
   return {
-    user: { ...mockSession.user, email: null, available: true },
+    user: { ...mockSession.user, email: 'napa@smartvend.example', available: true },
     memberships: [
       {
         tenantId: TENANT.id,
