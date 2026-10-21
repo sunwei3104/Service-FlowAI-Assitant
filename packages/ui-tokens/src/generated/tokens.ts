@@ -125,8 +125,53 @@ export const layout = {
 } as const;
 
 export const typeStyles = {
+  "caption": {
+    "fontSize": "12px",
+    "lineHeight": "18px",
+    "fontWeight": 400
+  },
+  "body-sm": {
+    "fontSize": "13px",
+    "lineHeight": "20px",
+    "fontWeight": 400
+  },
+  "body": {
+    "fontSize": "14px",
+    "lineHeight": "21px",
+    "fontWeight": 400
+  },
+  "body-lg": {
+    "fontSize": "15px",
+    "lineHeight": "22px",
+    "fontWeight": 400
+  },
+  "card-title": {
+    "fontSize": "17px",
+    "lineHeight": "26px",
+    "fontWeight": 600
+  },
+  "mobile-title": {
+    "fontSize": "20px",
+    "lineHeight": "28px",
+    "fontWeight": 700
+  },
+  "section-title": {
+    "fontSize": "22px",
+    "lineHeight": "30px",
+    "fontWeight": 700
+  },
   "page-title": {
     "fontSize": "26px",
+    "lineHeight": "34px",
+    "fontWeight": 700
+  },
+  "auth-title": {
+    "fontSize": "28px",
+    "lineHeight": "36px",
+    "fontWeight": 700
+  },
+  "kpi-sm": {
+    "fontSize": "30px",
     "lineHeight": "34px",
     "fontWeight": 700
   },
@@ -135,25 +180,10 @@ export const typeStyles = {
     "lineHeight": "38px",
     "fontWeight": 700
   },
-  "card-title": {
-    "fontSize": "17px",
-    "lineHeight": "26px",
-    "fontWeight": 600
-  },
-  "body": {
-    "fontSize": "14px",
-    "lineHeight": "21px",
-    "fontWeight": 400
-  },
-  "body-sm": {
-    "fontSize": "13px",
-    "lineHeight": "20px",
-    "fontWeight": 400
-  },
-  "caption": {
-    "fontSize": "12px",
-    "lineHeight": "18px",
-    "fontWeight": 400
+  "display": {
+    "fontSize": "36px",
+    "lineHeight": "47px",
+    "fontWeight": 700
   },
   "code": {
     "fontSize": "13px",
