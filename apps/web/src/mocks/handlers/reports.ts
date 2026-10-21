@@ -37,11 +37,11 @@ function summary(): Schemas['ReportSummary'] {
       aiResolved: Math.round(total * 0.3),
     })),
     topProblems: [
-      { categoryName: 'ไม่ทอนเงิน / ไม่รับเงิน', share: 0.46 },
-      { categoryName: 'หน้าจอค้าง / ไม่ตอบสนอง', share: 0.22 },
-      { categoryName: 'จ่ายแล้วสินค้าไม่ออก', share: 0.15 },
-      { categoryName: 'ชำระ QR ไม่สำเร็จ', share: 0.09 },
-      { categoryName: 'อื่น ๆ', share: 0.08 },
+      { categoryName: 'ไม่ทอนเงิน / ไม่รับเงิน', share: 0.46, isOther: false },
+      { categoryName: 'หน้าจอค้าง / ไม่ตอบสนอง', share: 0.22, isOther: false },
+      { categoryName: 'จ่ายแล้วสินค้าไม่ออก', share: 0.15, isOther: false },
+      { categoryName: 'ชำระ QR ไม่สำเร็จ', share: 0.09, isOther: false },
+      { categoryName: 'อื่น ๆ', share: 0.08, isOther: true },
     ],
     slaBreached: [ref(148), ref(139)].filter((x): x is NonNullable<typeof x> => x !== null),
     recentActivity: [

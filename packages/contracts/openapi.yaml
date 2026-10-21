@@ -2144,10 +2144,12 @@ components:
           type: array
           items:
             type: object
-            required: [categoryName, share]
+            required: [categoryName, share, isOther]
             properties:
               categoryName: { type: string }
               share: { type: number, minimum: 0, maximum: 1 }
+              isOther:
+                { type: boolean, description: The "อื่น ๆ" bucket (drawn in the neutral color) }
         slaBreached:
           type: array
           items: { $ref: '#/components/schemas/TicketRef' }

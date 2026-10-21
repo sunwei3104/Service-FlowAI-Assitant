@@ -225,7 +225,12 @@ pnpm dev           # web :3000 + console :3001
 
 ## 7. คำถามค้าง
 
-ตอบครบแล้ว Q1–Q13 (2026-10-22) → ดู D11–D19 ใน §2 ยังไม่มีคำถามค้างใหม่
+ตอบครบแล้ว Q1–Q13 (2026-10-22) → ดู D11–D19 ใน §2
+
+| # | คำถามใหม่ | ผลกระทบ | ตอนนี้ทำไว้แบบไหน |
+|---|---|---|---|
+| Q14 | ตาราง "งานที่ต้องดูตอนนี้" ในแบบมีงานที่ปิดแล้ว (SF-000136) ปนอยู่ — เกณฑ์เลือก 6 แถวคืออะไร? | Main | งานที่เปิดอยู่ เรียงตาม SLA ที่ใกล้ครบก่อน 6 แถว |
+| Q15 | แผนตาราง 17 ให้ `GET /usage` เฉพาะ Owner แต่แบบหน้าภาพรวมของ Admin มีการ์ด "คำตอบ AI เดือนนี้" — ให้ Admin อ่าน usage ได้ไหม? | Main, backend | การ์ดซ่อนเองถ้า API ตอบ 403 |
 
 ### Endpoint ที่หน้าบ้านเพิ่มใน spec (ไม่อยู่ในตาราง 17/18 ของแผน — `x-draft-note`)
 
@@ -272,5 +277,6 @@ pnpm dev           # web :3000 + console :3001
 
 ## 10. Changelog
 
+- **2026-10-22 (3)** — หน้าภาพรวม (Main) ตามแบบ + component กลาง KpiTile, ProgressMeter, BarChart, StackedBar, Panel, Pill/StatusBadge
 - **2026-10-22 (2)** — ทำตามคำตอบ Q1–Q13 (D11–D20): type scale, state machine, invitation-only sign-in, เมนูบัญชี, ซ่อนกระดิ่ง, หน้าตั้งค่า, หน้า Passkey คอนโซล, pagination total
 - **2026-10-22** — สร้าง monorepo, tokens pipeline, ร่าง contracts ทั้ง 2 ไฟล์, service layer ครบทุก endpoint, MSW mock, shell ทั้ง 3 แบบ, หน้า SignIn, หน้า "เร็ว ๆ นี้", เทสต์ + CI + Docker
