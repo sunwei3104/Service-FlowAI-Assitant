@@ -1,0 +1,27 @@
+{
+  "name": "serviceflow-ai",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @serviceflow/web --filter @serviceflow/console dev",
+    "dev:web": "pnpm --filter @serviceflow/web dev",
+    "dev:console": "pnpm --filter @serviceflow/console dev",
+    "gen": "pnpm --filter @serviceflow/ui-tokens gen && pnpm --filter @serviceflow/contracts gen",
+    "gen:check": "pnpm gen && git diff --exit-code -- packages/ui-tokens/src/generated packages/contracts/gen",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "node scripts/check-design-tokens.mjs && pnpm -r lint",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm -r test:e2e",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "3.6.2",
+    "prettier-plugin-tailwindcss": "0.6.14",
+    "typescript": "5.9.3"
+  }
+}

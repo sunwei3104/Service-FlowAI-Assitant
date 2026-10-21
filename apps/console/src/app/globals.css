@@ -1,0 +1,4 @@
+@import '@serviceflow/ui/styles/globals.css';
+
+/* Scan this app's source for Tailwind classes (the shared package scans its own). */
+@source '../';

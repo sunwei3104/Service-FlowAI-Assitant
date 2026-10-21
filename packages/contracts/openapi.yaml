@@ -1,0 +1,2212 @@
+openapi: 3.1.0
+info:
+  title: ServiceFlow AI — Customer API
+  version: 0.1.0-draft
+  summary: Contract between apps/web and services/api (plan §7). DRAFT — written by the frontend from the designs; backend reviews before implementing.
+  description: |
+    Conventions (plan §7.2):
+    - Base path /api/v1, same-origin with the web app (Caddy routes /api → services/api).
+    - JSON, camelCase fields, ISO-8601 UTC timestamps, UUID ids.
+    - Cursor pagination: ?limit=50&cursor=… → { data: [...], nextCursor }. limit max 100.
+    - Errors are RFC 9457 Problem Details (application/problem+json).
+    - POST that creates data accepts Idempotency-Key. Updates of versioned resources require If-Match (ETag = version).
+    - Every mutating request sends X-CSRF-Token (double-submit) — added by the client middleware.
+    Items marked `x-draft-note` are frontend assumptions that the backend must confirm.
+servers:
+  - url: /api/v1
+security:
+  - sessionCookie: []
+tags:
+  - name: auth
+  - name: me
+  - name: tickets
+  - name: field
+    description: Technician (Agent) actions on mobile — plan §21.5
+  - name: assets
+  - name: imports
+  - name: knowledge
+  - name: ai
+  - name: line
+  - name: categories
+  - name: team
+  - name: security
+  - name: support-access
+  - name: reports
+  - name: billing
+  - name: audit
+
+paths:
+  # ───────────────────────── auth / me ─────────────────────────
+  /auth/{provider}/start:
+    get:
+      tags: [auth]
+      operationId: authStart
+      summary: Start OIDC sign-in (browser navigation, not fetch)
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AuthProvider'
+        - name: tenant
+          in: query
+          description: Tenant slug the user is signing in to (shown on the sign-in page).
+          schema: { type: string }
+        - name: returnTo
+          in: query
+          description: Relative path to return to after sign-in. Server must only accept same-origin relative paths.
+          schema: { type: string }
+      responses:
+        '302': { description: Redirect to the identity provider }
+        default: { $ref: '#/components/responses/Problem' }
+  /auth/{provider}/callback:
+    get:
+      tags: [auth]
+      operationId: authCallback
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AuthProvider'
+      responses:
+        '302': { description: Session created; redirect to returnTo or the role's home page }
+        default: { $ref: '#/components/responses/Problem' }
+  /workspaces/{slug}/public:
+    get:
+      tags: [auth]
+      operationId: getWorkspacePublic
+      summary: Public name of a workspace for the sign-in page ("พื้นที่ทำงาน")
+      x-draft-note: Not in plan table 17; the SignIn design shows the company name before login. Must be rate-limited and return 404 for unknown slugs (tenant enumeration risk) — backend to confirm.
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string, pattern: '^[a-z0-9][a-z0-9-]{1,40}$' }
+      responses:
+        '200':
+          description: Public workspace info
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [slug, displayName]
+                properties:
+                  slug: { type: string }
+                  displayName: { type: string }
+        default: { $ref: '#/components/responses/Problem' }
+  /auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      parameters:
+        - name: all
+          in: query
+          description: Sign out from every device.
+          schema: { type: boolean, default: false }
+      responses:
+        '204': { description: Signed out }
+        default: { $ref: '#/components/responses/Problem' }
+  /me:
+    get:
+      tags: [me]
+      operationId: getMe
+      responses:
+        '200':
+          description: Current user, memberships and active tenant
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+        default: { $ref: '#/components/responses/Problem' }
+  /me/active-tenant:
+    post:
+      tags: [me]
+      operationId: setActiveTenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenantId]
+              properties:
+                tenantId: { $ref: '#/components/schemas/Uuid' }
+      responses:
+        '200':
+          description: Active tenant switched
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+        default: { $ref: '#/components/responses/Problem' }
+  /me/availability:
+    put:
+      tags: [field]
+      operationId: setMyAvailability
+      summary: Technician "พร้อมรับงานใหม่" switch
+      x-draft-note: Not in plan table 17; required by the TechJobs design.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [available]
+              properties:
+                available: { type: boolean }
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [available]
+                properties:
+                  available: { type: boolean }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # ───────────────────────── tickets ─────────────────────────
+  /tickets:
+    get:
+      tags: [tickets]
+      operationId: listTickets
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - name: view
+          in: query
+          description: Saved views on the Tickets page tabs.
+          schema: { type: string, enum: [open, unassigned, sla_breached, waiting, closed] }
+        - name: status
+          in: query
+          style: form
+          explode: false
+          schema: { type: array, items: { $ref: '#/components/schemas/TicketStatus' } }
+        - name: priority
+          in: query
+          style: form
+          explode: false
+          schema: { type: array, items: { $ref: '#/components/schemas/TicketPriority' } }
+        - name: categoryId
+          in: query
+          schema: { $ref: '#/components/schemas/Uuid' }
+        - name: assignee
+          in: query
+          description: A user id, "me", or "none" for unassigned.
+          schema: { type: string }
+        - name: area
+          in: query
+          description: Branch / area filter (สาขา / พื้นที่).
+          schema: { type: string }
+        - name: assetId
+          in: query
+          schema: { $ref: '#/components/schemas/Uuid' }
+        - name: sla
+          in: query
+          schema: { type: string, enum: [breached, at_risk] }
+        - name: q
+          in: query
+          description: Search ticket number, asset code or customer name.
+          schema: { type: string, maxLength: 100 }
+        - name: sort
+          in: query
+          schema:
+            {
+              type: string,
+              enum: [createdAt, -createdAt, slaDueAt, -slaDueAt, priority, -priority],
+              default: -createdAt,
+            }
+      responses:
+        '200':
+          description: Page of tickets
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CursorPage'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/TicketSummary' } }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [tickets]
+      operationId: createTicket
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateTicketRequest' }
+      responses:
+        '201':
+          description: Created
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ticket' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tickets/counts:
+    get:
+      tags: [tickets]
+      operationId: getTicketCounts
+      x-draft-note: Not in plan table 17; the Tickets page tabs and the sidebar badge show these counts.
+      responses:
+        '200':
+          description: Counts per saved view (same filters as GET /tickets?view=…)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TicketCounts' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tickets/export:
+    get:
+      tags: [tickets]
+      operationId: exportTickets
+      summary: Export the current filter as CSV
+      x-draft-note: Not in plan table 17; required by the Tickets design ("ส่งออก CSV").
+      parameters:
+        - name: view
+          in: query
+          schema: { type: string, enum: [open, unassigned, sla_breached, waiting, closed] }
+      responses:
+        '200':
+          description: CSV file
+          content:
+            text/csv:
+              schema: { type: string }
+        default: { $ref: '#/components/responses/Problem' }
+  /tickets/bulk-assign:
+    post:
+      tags: [tickets]
+      operationId: bulkAssignTickets
+      x-draft-note: Not in plan table 17; required by the BulkActionBar on the Tickets design.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ticketIds, assigneeId]
+              properties:
+                ticketIds:
+                  {
+                    type: array,
+                    minItems: 1,
+                    maxItems: 100,
+                    items: { $ref: '#/components/schemas/Uuid' },
+                  }
+                assigneeId: { $ref: '#/components/schemas/Uuid' }
+      responses:
+        '200':
+          description: Per-ticket result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [results]
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      required: [ticketId, ok]
+                      properties:
+                        ticketId: { $ref: '#/components/schemas/Uuid' }
+                        ok: { type: boolean }
+                        problem: { $ref: '#/components/schemas/Problem' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tickets/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [tickets]
+      operationId: getTicket
+      responses:
+        '200':
+          description: Ticket detail
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ticket' }
+        default: { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [tickets]
+      operationId: updateTicket
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateTicketRequest' }
+      responses:
+        '200':
+          description: Updated
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ticket' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tickets/{id}/transitions:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [tickets]
+      operationId: transitionTicket
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TransitionRequest' }
+      responses:
+        '200':
+          description: Transitioned
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ticket' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tickets/{id}/assign:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [tickets]
+      operationId: assignTicket
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assigneeId]
+              properties:
+                assigneeId: { $ref: '#/components/schemas/Uuid' }
+                notify: { type: boolean, default: true, description: Notify the technician on LINE }
+      responses:
+        '200':
+          description: Assigned
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ticket' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tickets/{id}/assignee-suggestions:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [tickets]
+      operationId: listAssigneeSuggestions
+      x-draft-note: Not in plan table 17; the TicketDetail design shows "ใกล้สุด · มีงานที่เครื่องนี้" and open-job counts per technician.
+      responses:
+        '200':
+          description: Technicians ranked for this ticket
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/AssigneeSuggestion' } }
+        default: { $ref: '#/components/responses/Problem' }
+  /tickets/{id}/events:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [tickets]
+      operationId: listTicketEvents
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Timeline (oldest first)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CursorPage'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/TicketEvent' } }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [tickets]
+      operationId: addTicketNote
+      summary: Add an internal note (customer never sees it)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string, minLength: 1, maxLength: 4000 }
+      responses:
+        '201':
+          description: Note added
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TicketEvent' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tickets/{id}/attachments:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [tickets]
+      operationId: createTicketAttachment
+      summary: Get a presigned upload URL (photos are resized and EXIF/GPS stripped on the client first)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UploadRequest' }
+      responses:
+        '201':
+          description: Upload target
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UploadTarget' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tickets/{id}/messages:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [tickets]
+      operationId: sendTicketMessage
+      summary: Reply to the customer on LINE (via outbox)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string, minLength: 1, maxLength: 2000 }
+                suggestionId:
+                  description: Set when the agent used an AI suggestion (for quality metrics).
+                  $ref: '#/components/schemas/Uuid'
+      responses:
+        '202':
+          description: Queued for delivery
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TicketEvent' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tickets/{id}/reply-suggestions:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [tickets, ai]
+      operationId: createReplySuggestions
+      summary: AI drafts a reply from the knowledge base (never sends by itself)
+      responses:
+        '200':
+          description: Suggestions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/AiSuggestion' } }
+        default: { $ref: '#/components/responses/Problem' }
+  /tickets/{id}/claim:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [field]
+      operationId: claimTicket
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Claimed by the current technician
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ticket' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tickets/{id}/release:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [field]
+      operationId: releaseTicket
+      summary: Technician declines / hands the job back with a reason
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 1, maxLength: 500 }
+      responses:
+        '200':
+          description: Released
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ticket' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tickets/{id}/checklist:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [field]
+      operationId: getTicketChecklist
+      responses:
+        '200':
+          description: Checklist generated from the knowledge base
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Checklist' }
+        default: { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [field]
+      operationId: updateTicketChecklist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [id, done]
+                    properties:
+                      id: { $ref: '#/components/schemas/Uuid' }
+                      done: { type: boolean }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Checklist' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # ───────────────────────── assets / imports ─────────────────────────
+  /assets:
+    get:
+      tags: [assets]
+      operationId: listAssets
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 100 }
+        - name: branch
+          in: query
+          schema: { type: string }
+        - name: condition
+          in: query
+          schema: { $ref: '#/components/schemas/AssetCondition' }
+      responses:
+        '200':
+          description: Page of assets
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CursorPage'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/Asset' } }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [assets]
+      operationId: createAsset
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssetInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Asset' }
+        default: { $ref: '#/components/responses/Problem' }
+  /assets/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [assets]
+      operationId: getAsset
+      responses:
+        '200':
+          description: Asset
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Asset' }
+        default: { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [assets]
+      operationId: updateAsset
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssetInput' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Asset' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [assets]
+      operationId: deactivateAsset
+      responses:
+        '204': { description: Deactivated }
+        default: { $ref: '#/components/responses/Problem' }
+  /assets/qr-sheet:
+    post:
+      tags: [assets]
+      operationId: createAssetQrSheet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assetIds]
+              properties:
+                assetIds:
+                  {
+                    type: array,
+                    minItems: 1,
+                    maxItems: 500,
+                    items: { $ref: '#/components/schemas/Uuid' },
+                  }
+      responses:
+        '200':
+          description: PDF ready to download (short-lived URL)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DownloadLink' }
+        default: { $ref: '#/components/responses/Problem' }
+  /imports:
+    post:
+      tags: [imports]
+      operationId: createImport
+      summary: Step 1 — create an import job and get the upload URL for the CSV/XLSX file
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind, file]
+              properties:
+                kind: { type: string, enum: [assets] }
+                file: { $ref: '#/components/schemas/UploadRequest' }
+      responses:
+        '202':
+          description: Job created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [job, upload]
+                properties:
+                  job: { $ref: '#/components/schemas/ImportJob' }
+                  upload: { $ref: '#/components/schemas/UploadTarget' }
+        default: { $ref: '#/components/responses/Problem' }
+  /imports/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [imports]
+      operationId: getImport
+      responses:
+        '200':
+          description: Job status, detected columns and validation summary
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportJob' }
+        default: { $ref: '#/components/responses/Problem' }
+  /imports/{id}/mapping:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [imports]
+      operationId: setImportMapping
+      summary: Step 2 — map file columns to asset fields, triggers validation (step 3)
+      x-draft-note: Not in plan table 17; required by the 4-step import wizard.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mapping]
+              properties:
+                mapping:
+                  type: object
+                  description: File column header → target field ("skip" = do not import).
+                  additionalProperties:
+                    type: string
+                    enum: [code, location, model, installedAt, note, skip]
+      responses:
+        '202':
+          description: Validating
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportJob' }
+        default: { $ref: '#/components/responses/Problem' }
+  /imports/{id}/confirm:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [imports]
+      operationId: confirmImport
+      summary: Step 4 — import valid rows in one transaction
+      x-draft-note: Not in plan table 17; required by the 4-step import wizard.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202':
+          description: Importing
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImportJob' }
+        default: { $ref: '#/components/responses/Problem' }
+  /imports/{id}/errors:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [imports]
+      operationId: listImportErrors
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Rows that failed validation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CursorPage'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/ImportRowError' } }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # ───────────────────────── knowledge / ai ─────────────────────────
+  /knowledge/documents:
+    get:
+      tags: [knowledge]
+      operationId: listKnowledgeDocuments
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 100 }
+        - name: category
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Page of documents
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CursorPage'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        { type: array, items: { $ref: '#/components/schemas/KnowledgeDocument' } }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [knowledge]
+      operationId: createKnowledgeDocument
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateKnowledgeDocumentRequest' }
+      responses:
+        '201':
+          description: Created. For kind=manual the response carries an upload target for the PDF.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [document]
+                properties:
+                  document: { $ref: '#/components/schemas/KnowledgeDocument' }
+                  upload: { $ref: '#/components/schemas/UploadTarget' }
+        default: { $ref: '#/components/responses/Problem' }
+  /knowledge/documents/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    delete:
+      tags: [knowledge]
+      operationId: deleteKnowledgeDocument
+      responses:
+        '204': { description: Deleted }
+        default: { $ref: '#/components/responses/Problem' }
+  /knowledge/search:
+    post:
+      tags: [knowledge]
+      operationId: searchKnowledge
+      summary: Try-asking-the-AI box on the Knowledge page
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query: { type: string, minLength: 1, maxLength: 500 }
+      responses:
+        '200':
+          description: Grounded answer or refusal
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KnowledgeAnswer' }
+        default: { $ref: '#/components/responses/Problem' }
+  /knowledge/gaps:
+    get:
+      tags: [knowledge]
+      operationId: listKnowledgeGaps
+      parameters:
+        - name: days
+          in: query
+          schema: { type: integer, enum: [7, 30], default: 7 }
+      responses:
+        '200':
+          description: Questions the AI could not answer, most frequent first
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, totalCount]
+                properties:
+                  totalCount: { type: integer }
+                  data: { type: array, items: { $ref: '#/components/schemas/KnowledgeGap' } }
+        default: { $ref: '#/components/responses/Problem' }
+  /ai/settings:
+    get:
+      tags: [ai]
+      operationId: getAiSettings
+      responses:
+        '200':
+          description: AI rules
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiSettings' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [ai]
+      operationId: updateAiSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AiSettings' }
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiSettings' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # ───────────────────────── LINE / categories ─────────────────────────
+  /line/channel:
+    get:
+      tags: [line]
+      operationId: getLineChannel
+      responses:
+        '200':
+          description: Connection (secrets always masked)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LineChannel' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [line]
+      operationId: updateLineChannel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LineChannelInput' }
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LineChannel' }
+        default: { $ref: '#/components/responses/Problem' }
+  /line/channel/verify:
+    post:
+      tags: [line]
+      operationId: verifyLineChannel
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LineVerifyResult' }
+        default: { $ref: '#/components/responses/Problem' }
+  /line/settings:
+    get:
+      tags: [line]
+      operationId: getLineSettings
+      responses:
+        '200':
+          description: Welcome message, menu and business hours
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LineSettings' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [line]
+      operationId: updateLineSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LineSettings' }
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LineSettings' }
+        default: { $ref: '#/components/responses/Problem' }
+  /problem-categories:
+    get:
+      tags: [categories]
+      operationId: listProblemCategories
+      responses:
+        '200':
+          description: All categories of the tenant
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ProblemCategory' } }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [categories]
+      operationId: createProblemCategory
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProblemCategoryInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProblemCategory' }
+        default: { $ref: '#/components/responses/Problem' }
+  /problem-categories/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    patch:
+      tags: [categories]
+      operationId: updateProblemCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProblemCategoryInput' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProblemCategory' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [categories]
+      operationId: deleteProblemCategory
+      responses:
+        '204': { description: Deleted }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # ───────────────────────── team / security / support access ─────────────────────────
+  /members:
+    get:
+      tags: [team]
+      operationId: listMembers
+      responses:
+        '200':
+          description: Members of the tenant
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Member' } }
+        default: { $ref: '#/components/responses/Problem' }
+  /members/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/Uuid' }
+    patch:
+      tags: [team]
+      operationId: updateMember
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role: { $ref: '#/components/schemas/TenantRole' }
+                area: { type: [string, 'null'], maxLength: 100 }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Member' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [team]
+      operationId: removeMember
+      responses:
+        '204': { description: Removed (all sessions revoked) }
+        default: { $ref: '#/components/responses/Problem' }
+  /invitations:
+    get:
+      tags: [team]
+      operationId: listInvitations
+      responses:
+        '200':
+          description: Pending invitations
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Invitation' } }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [team]
+      operationId: createInvitation
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                email: { type: string, format: email }
+                role: { $ref: '#/components/schemas/TenantRole' }
+      responses:
+        '201':
+          description: Invitation created (includes a one-time link to share on LINE)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Invitation' }
+        default: { $ref: '#/components/responses/Problem' }
+  /invitations/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    delete:
+      tags: [team]
+      operationId: revokeInvitation
+      responses:
+        '204': { description: Revoked }
+        default: { $ref: '#/components/responses/Problem' }
+  /tenant/security:
+    get:
+      tags: [security]
+      operationId: getTenantSecurity
+      responses:
+        '200':
+          description: Security settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantSecurity' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [security]
+      operationId: updateTenantSecurity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TenantSecurity' }
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantSecurity' }
+        default: { $ref: '#/components/responses/Problem' }
+  /support-access/requests:
+    get:
+      tags: [support-access]
+      operationId: listSupportAccessRequests
+      parameters:
+        - name: status
+          in: query
+          schema: { $ref: '#/components/schemas/SupportAccessStatus' }
+      responses:
+        '200':
+          description: Requests from the ServiceFlow team
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    { type: array, items: { $ref: '#/components/schemas/SupportAccessRequest' } }
+        default: { $ref: '#/components/responses/Problem' }
+  /support-access/requests/{id}/approve:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [support-access]
+      operationId: approveSupportAccess
+      responses:
+        '200':
+          description: Approved — grant is active
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SupportAccessRequest' }
+        default: { $ref: '#/components/responses/Problem' }
+  /support-access/requests/{id}/deny:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [support-access]
+      operationId: denySupportAccess
+      responses:
+        '200':
+          description: Denied
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SupportAccessRequest' }
+        default: { $ref: '#/components/responses/Problem' }
+  /support-access/grants/{id}/revoke:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [support-access]
+      operationId: revokeSupportAccess
+      responses:
+        '200':
+          description: Revoked immediately
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SupportAccessRequest' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # ───────────────────────── reports / billing / audit ─────────────────────────
+  /reports/summary:
+    get:
+      tags: [reports]
+      operationId: getReportSummary
+      parameters:
+        - $ref: '#/components/parameters/Range'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+      responses:
+        '200':
+          description: KPIs, open-ticket mix, daily series, top problems, recent activity
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportSummary' }
+        default: { $ref: '#/components/responses/Problem' }
+  /reports/sla:
+    get:
+      tags: [reports]
+      operationId: getSlaReport
+      parameters:
+        - $ref: '#/components/parameters/Range'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+      responses:
+        '200':
+          description: SLA per category
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/SlaByCategory' } }
+        default: { $ref: '#/components/responses/Problem' }
+  /reports/technicians:
+    get:
+      tags: [reports]
+      operationId: getTechnicianReport
+      parameters:
+        - $ref: '#/components/parameters/Range'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+      responses:
+        '200':
+          description: Performance per technician
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    { type: array, items: { $ref: '#/components/schemas/TechnicianPerformance' } }
+        default: { $ref: '#/components/responses/Problem' }
+  /reports/assets:
+    get:
+      tags: [reports]
+      operationId: getAssetReport
+      parameters:
+        - $ref: '#/components/parameters/Range'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+      responses:
+        '200':
+          description: Assets with most problems
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/AssetProblemStat' } }
+        default: { $ref: '#/components/responses/Problem' }
+  /reports/export:
+    get:
+      tags: [reports]
+      operationId: exportReport
+      x-draft-note: Not in plan table 17; required by "ส่งออกรายงาน" (Main) and "Excel / PDF" (Reports).
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema: { type: string, enum: [xlsx, pdf] }
+        - $ref: '#/components/parameters/Range'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+      responses:
+        '200':
+          description: File ready (short-lived URL)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DownloadLink' }
+        default: { $ref: '#/components/responses/Problem' }
+  /usage:
+    get:
+      tags: [billing]
+      operationId: getUsage
+      responses:
+        '200':
+          description: Usage of the current billing period against plan limits
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Usage' }
+        default: { $ref: '#/components/responses/Problem' }
+  /subscription:
+    get:
+      tags: [billing]
+      operationId: getSubscription
+      responses:
+        '200':
+          description: Current plan
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Subscription' }
+        default: { $ref: '#/components/responses/Problem' }
+  /audit-logs:
+    get:
+      tags: [audit]
+      operationId: listAuditLogs
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Audit log including ServiceFlow team access
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CursorPage'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/AuditLogEntry' } }
+        default: { $ref: '#/components/responses/Problem' }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-sf_session
+      description: HttpOnly server-side session (plan §8.2). Mutations also require the X-CSRF-Token header.
+
+  headers:
+    ETag:
+      description: Resource version, send back in If-Match.
+      schema: { type: string }
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    AuthProvider:
+      name: provider
+      in: path
+      required: true
+      schema: { type: string, enum: [line, google] }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, format: uuid }
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema: { type: string }
+    Range:
+      name: range
+      in: query
+      schema: { type: string, enum: [today, 7d, 30d, quarter, custom], default: 30d }
+    From:
+      name: from
+      in: query
+      description: Required when range=custom (date, Asia/Bangkok).
+      schema: { type: string, format: date }
+    To:
+      name: to
+      in: query
+      schema: { type: string, format: date }
+
+  responses:
+    Problem:
+      description: Error (RFC 9457)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    Uuid: { type: string, format: uuid }
+    Timestamp: { type: string, format: date-time }
+
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        requestId: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string }
+              message: { type: string }
+
+    CursorPage:
+      type: object
+      required: [nextCursor]
+      properties:
+        nextCursor: { type: [string, 'null'] }
+
+    UserRef:
+      type: object
+      required: [id, displayName]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        displayName: { type: string }
+        avatarUrl: { type: [string, 'null'], format: uri }
+
+    TenantRole:
+      type: string
+      enum: [owner, admin, agent, viewer]
+
+    Membership:
+      type: object
+      required: [tenantId, tenantSlug, tenantName, role]
+      properties:
+        tenantId: { $ref: '#/components/schemas/Uuid' }
+        tenantSlug: { type: string }
+        tenantName: { type: string }
+        planName: { type: string }
+        role: { $ref: '#/components/schemas/TenantRole' }
+
+    Me:
+      type: object
+      required: [user, memberships, activeTenantId, sampleData]
+      properties:
+        user:
+          allOf:
+            - $ref: '#/components/schemas/UserRef'
+            - type: object
+              properties:
+                email: { type: [string, 'null'], format: email }
+                available: { type: boolean, description: Technician availability switch }
+        memberships: { type: array, items: { $ref: '#/components/schemas/Membership' } }
+        activeTenantId: { type: [string, 'null'], format: uuid }
+        sampleData:
+          type: boolean
+          description: True for demo tenants seeded with sample data — UI shows the "ข้อมูลตัวอย่าง" chip.
+
+    # ── tickets ──
+    TicketStatus:
+      type: string
+      enum: [new, assigned, in_progress, waiting, resolved]
+    WaitingReason:
+      type: string
+      enum: [customer, parts]
+    TicketPriority:
+      type: string
+      enum: [urgent, high, normal, low]
+    TicketSource:
+      type: string
+      enum: [line, web]
+
+    Sla:
+      type: object
+      required: [dueAt, pausedAt, state]
+      properties:
+        dueAt: { type: [string, 'null'], format: date-time }
+        pausedAt:
+          type: [string, 'null']
+          format: date-time
+          description: Set while waiting for the customer or for parts (SLA clock stopped).
+        state: { type: string, enum: [on_track, at_risk, breached, paused, met, missed] }
+
+    CategoryRef:
+      type: object
+      required: [id, name]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        name: { type: string }
+
+    AssetRef:
+      type: object
+      required: [id, code, branch]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        code: { type: string, examples: [VM-BKK-0231] }
+        branch: { type: string, examples: [สาขาสยาม] }
+        locationDetail: { type: [string, 'null'], examples: [ชั้น 2] }
+
+    TicketSummary:
+      type: object
+      required:
+        [
+          id,
+          number,
+          title,
+          status,
+          waitingReason,
+          priority,
+          category,
+          asset,
+          assignee,
+          source,
+          sla,
+          createdAt,
+          updatedAt,
+          version,
+        ]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        number: { type: string, examples: [SF-000148] }
+        title: { type: string }
+        status: { $ref: '#/components/schemas/TicketStatus' }
+        waitingReason:
+          oneOf:
+            - $ref: '#/components/schemas/WaitingReason'
+            - type: 'null'
+        priority: { $ref: '#/components/schemas/TicketPriority' }
+        category:
+          oneOf:
+            - $ref: '#/components/schemas/CategoryRef'
+            - type: 'null'
+        asset:
+          oneOf:
+            - $ref: '#/components/schemas/AssetRef'
+            - type: 'null'
+        assignee:
+          oneOf:
+            - $ref: '#/components/schemas/UserRef'
+            - type: 'null'
+        customerName: { type: [string, 'null'] }
+        source: { $ref: '#/components/schemas/TicketSource' }
+        sla: { $ref: '#/components/schemas/Sla' }
+        aiSummary: { type: [string, 'null'], description: One-line AI summary for technicians }
+        distanceKm:
+          { type: [number, 'null'], description: Distance from the technician (field views only) }
+        createdAt: { $ref: '#/components/schemas/Timestamp' }
+        updatedAt: { $ref: '#/components/schemas/Timestamp' }
+        version: { type: integer }
+
+    Ticket:
+      allOf:
+        - $ref: '#/components/schemas/TicketSummary'
+        - type: object
+          required: [description, acceptedAt, resolvedAt, requirePhotoOnResolve]
+          properties:
+            description: { type: [string, 'null'] }
+            customer:
+              type: [object, 'null']
+              properties:
+                displayName: { type: string }
+                phoneMasked: { type: [string, 'null'] }
+            acceptedAt: { type: [string, 'null'], format: date-time }
+            resolvedAt: { type: [string, 'null'], format: date-time }
+            requirePhotoOnResolve: { type: boolean }
+            assetLocation:
+              type: [object, 'null']
+              properties:
+                lat: { type: number }
+                lng: { type: number }
+            relatedOpenTickets:
+              type: array
+              description: Other open tickets on the same asset
+              items: { $ref: '#/components/schemas/TicketRef' }
+
+    TicketCounts:
+      type: object
+      required: [open, unassigned, slaBreached, waiting, closed, receivedThisMonth]
+      properties:
+        open: { type: integer }
+        unassigned: { type: integer }
+        slaBreached: { type: integer }
+        waiting: { type: integer }
+        closed: { type: integer }
+        receivedThisMonth: { type: integer }
+
+    TicketRef:
+      type: object
+      required: [id, number, title, status]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        number: { type: string }
+        title: { type: string }
+        status: { $ref: '#/components/schemas/TicketStatus' }
+
+    CreateTicketRequest:
+      type: object
+      required: [title, categoryId]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, maxLength: 4000 }
+        categoryId: { $ref: '#/components/schemas/Uuid' }
+        assetCode: { type: string, maxLength: 64 }
+        priority: { $ref: '#/components/schemas/TicketPriority' }
+        assigneeId: { $ref: '#/components/schemas/Uuid' }
+
+    UpdateTicketRequest:
+      type: object
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        priority: { $ref: '#/components/schemas/TicketPriority' }
+        categoryId: { $ref: '#/components/schemas/Uuid' }
+
+    TransitionRequest:
+      type: object
+      required: [to]
+      properties:
+        to: { $ref: '#/components/schemas/TicketStatus' }
+        waitingReason: { $ref: '#/components/schemas/WaitingReason' }
+        note: { type: string, maxLength: 2000 }
+        notifyCustomer:
+          { type: boolean, default: false, description: Send the resolve message on LINE }
+        partsUsed:
+          type: array
+          items: { type: string, maxLength: 100 }
+
+    TicketEventType:
+      type: string
+      enum: [message_in, message_out, ai_reply, note, status_change, assignment, system]
+
+    TicketEvent:
+      type: object
+      required: [id, type, actorType, actor, body, createdAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        type: { $ref: '#/components/schemas/TicketEventType' }
+        actorType: { type: string, enum: [customer, user, ai, system] }
+        actor:
+          oneOf:
+            - $ref: '#/components/schemas/UserRef'
+            - type: 'null'
+        body: { type: [string, 'null'] }
+        fromStatus:
+          oneOf:
+            - $ref: '#/components/schemas/TicketStatus'
+            - type: 'null'
+        toStatus:
+          oneOf:
+            - $ref: '#/components/schemas/TicketStatus'
+            - type: 'null'
+        attachments: { type: array, items: { $ref: '#/components/schemas/Attachment' } }
+        sources:
+          type: array
+          description: Knowledge sources for ai_reply events
+          items: { $ref: '#/components/schemas/KnowledgeSource' }
+        deliveryStatus: { type: [string, 'null'], enum: [queued, sent, failed, null] }
+        createdAt: { $ref: '#/components/schemas/Timestamp' }
+
+    Attachment:
+      type: object
+      required: [id, mime, url]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        mime: { type: string }
+        url: { type: string, format: uri, description: Short-lived signed URL }
+        thumbnailUrl: { type: [string, 'null'], format: uri }
+
+    AssigneeSuggestion:
+      type: object
+      required: [user, openTickets, reason]
+      properties:
+        user: { $ref: '#/components/schemas/UserRef' }
+        openTickets: { type: integer }
+        reason: { type: [string, 'null'], examples: [ใกล้สุด · มีงานที่เครื่องนี้] }
+
+    AiSuggestion:
+      type: object
+      required: [id, body, confidence, sources]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        body: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        sources: { type: array, items: { $ref: '#/components/schemas/KnowledgeSource' } }
+
+    Checklist:
+      type: object
+      required: [items, sourceDocument]
+      properties:
+        sourceDocument:
+          oneOf:
+            - $ref: '#/components/schemas/KnowledgeSource'
+            - type: 'null'
+        items:
+          type: array
+          items:
+            type: object
+            required: [id, label, done]
+            properties:
+              id: { $ref: '#/components/schemas/Uuid' }
+              label: { type: string }
+              done: { type: boolean }
+
+    # ── uploads ──
+    UploadRequest:
+      type: object
+      required: [fileName, mime, size, sha256]
+      properties:
+        fileName: { type: string, maxLength: 255 }
+        mime: { type: string }
+        size: { type: integer, minimum: 1, maximum: 20971520 }
+        sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
+    UploadTarget:
+      type: object
+      required: [uploadUrl, method, headers, expiresAt, objectKey]
+      properties:
+        uploadUrl: { type: string, format: uri }
+        method: { type: string, enum: [PUT] }
+        headers: { type: object, additionalProperties: { type: string } }
+        expiresAt: { $ref: '#/components/schemas/Timestamp' }
+        objectKey: { type: string }
+    DownloadLink:
+      type: object
+      required: [url, expiresAt]
+      properties:
+        url: { type: string, format: uri }
+        expiresAt: { $ref: '#/components/schemas/Timestamp' }
+
+    # ── assets ──
+    AssetCondition:
+      type: string
+      enum: [operational, open_tickets, out_of_service]
+      x-draft-note: From the Assets filter "ใช้งานได้ / มีงานเปิด / ปิดซ่อม".
+    Asset:
+      type: object
+      required: [id, code, branch, model, condition, openTickets, tickets30d, installedAt, active]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        code: { type: string }
+        branch: { type: string }
+        locationDetail: { type: [string, 'null'] }
+        model: { type: [string, 'null'] }
+        condition: { $ref: '#/components/schemas/AssetCondition' }
+        openTickets: { type: integer }
+        tickets30d: { type: integer }
+        installedAt: { type: [string, 'null'], format: date }
+        note: { type: [string, 'null'] }
+        active: { type: boolean }
+        location:
+          type: [object, 'null']
+          properties:
+            lat: { type: number }
+            lng: { type: number }
+    AssetInput:
+      type: object
+      required: [code, branch]
+      properties:
+        code: { type: string, minLength: 1, maxLength: 64 }
+        branch: { type: string, minLength: 1, maxLength: 100 }
+        locationDetail: { type: string, maxLength: 200 }
+        model: { type: string, maxLength: 100 }
+        installedAt: { type: string, format: date }
+        note: { type: string, maxLength: 500 }
+
+    ImportJob:
+      type: object
+      required: [id, kind, status, totalRows, validRows, errorRows, columns, createdAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        kind: { type: string, enum: [assets] }
+        status:
+          {
+            type: string,
+            enum: [awaiting_upload, mapping, validating, ready, importing, completed, failed],
+          }
+        fileName: { type: [string, 'null'] }
+        columns:
+          type: array
+          description: Column headers detected in the file, with a suggested mapping
+          items:
+            type: object
+            required: [header, suggested]
+            properties:
+              header: { type: string }
+              suggested: { type: string, enum: [code, location, model, installedAt, note, skip] }
+        totalRows: { type: integer }
+        validRows: { type: integer }
+        errorRows: { type: integer }
+        duplicateRows: { type: integer }
+        createdAt: { $ref: '#/components/schemas/Timestamp' }
+    ImportRowError:
+      type: object
+      required: [rowNo, field, message]
+      properties:
+        rowNo: { type: integer }
+        field: { type: string }
+        message: { type: string }
+
+    # ── knowledge / ai ──
+    KnowledgeSource:
+      type: object
+      required: [documentId, title]
+      properties:
+        documentId: { $ref: '#/components/schemas/Uuid' }
+        title: { type: string }
+        excerpt: { type: [string, 'null'] }
+    KnowledgeDocument:
+      type: object
+      required: [id, kind, title, category, status, audience, timesUsed, helpfulRate, updatedAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        kind: { type: string, enum: [faq, manual] }
+        title: { type: string }
+        category: { type: [string, 'null'] }
+        status: { type: string, enum: [published, draft, processing, failed] }
+        audience: { type: string, enum: [customers, internal], description: ใครเห็น }
+        timesUsed: { type: integer }
+        helpfulRate: { type: [number, 'null'], minimum: 0, maximum: 1 }
+        updatedAt: { $ref: '#/components/schemas/Timestamp' }
+    CreateKnowledgeDocumentRequest:
+      oneOf:
+        - $ref: '#/components/schemas/CreateFaqRequest'
+        - $ref: '#/components/schemas/CreateManualRequest'
+      discriminator:
+        propertyName: kind
+        mapping:
+          faq: '#/components/schemas/CreateFaqRequest'
+          manual: '#/components/schemas/CreateManualRequest'
+    CreateFaqRequest:
+      type: object
+      required: [kind, question, answer]
+      properties:
+        kind: { type: string, const: faq }
+        question: { type: string, minLength: 1, maxLength: 500 }
+        answer: { type: string, minLength: 1, maxLength: 4000 }
+        category: { type: string }
+        audience: { type: string, enum: [customers, internal], default: customers }
+        fromGapId: { $ref: '#/components/schemas/Uuid' }
+    CreateManualRequest:
+      type: object
+      required: [kind, title, file]
+      properties:
+        kind: { type: string, const: manual }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        category: { type: string }
+        audience: { type: string, enum: [customers, internal], default: internal }
+        file: { $ref: '#/components/schemas/UploadRequest' }
+    KnowledgeAnswer:
+      type: object
+      required: [grounded, answer, confidence, sources]
+      properties:
+        grounded: { type: boolean, description: False = AI refused (no evidence) }
+        answer: { type: [string, 'null'] }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        sources: { type: array, items: { $ref: '#/components/schemas/KnowledgeSource' } }
+    KnowledgeGap:
+      type: object
+      required: [id, question, count, lastAskedAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        question: { type: string }
+        count: { type: integer }
+        lastAskedAt: { $ref: '#/components/schemas/Timestamp' }
+    AiSettings:
+      type: object
+      required: [autoAnswerMinConfidence, escalateWhenUnsure, forbidMonetaryPromises]
+      properties:
+        autoAnswerMinConfidence: { type: number, enum: [0.7, 0.8, 0.9] }
+        escalateWhenUnsure: { type: boolean }
+        forbidMonetaryPromises:
+          { type: boolean, description: ห้าม AI รับปากเรื่องคืนเงินหรือส่วนลด }
+
+    # ── LINE ──
+    LineChannel:
+      type: object
+      required:
+        [
+          status,
+          channelId,
+          lineId,
+          channelSecretMasked,
+          accessTokenMasked,
+          webhookUrl,
+          lastVerifiedAt,
+        ]
+      properties:
+        status: { type: string, enum: [connected, error, not_connected] }
+        channelId: { type: [string, 'null'] }
+        lineId: { type: [string, 'null'], examples: ['@smartvend-help'] }
+        channelSecretMasked: { type: [string, 'null'] }
+        accessTokenMasked: { type: [string, 'null'] }
+        webhookUrl: { type: string, format: uri }
+        lastVerifiedAt: { type: [string, 'null'], format: date-time }
+        lastMessageAt: { type: [string, 'null'], format: date-time }
+        messagesToday: { type: integer }
+        ticketsOpenedToday: { type: integer }
+        lastError: { type: [string, 'null'] }
+    LineChannelInput:
+      type: object
+      required: [channelId]
+      properties:
+        channelId: { type: string }
+        channelSecret: { type: string, writeOnly: true, description: Only sent when rotating }
+        accessToken: { type: string, writeOnly: true, description: Only sent when rotating }
+    LineVerifyResult:
+      type: object
+      required: [ok, checkedAt]
+      properties:
+        ok: { type: boolean }
+        checkedAt: { $ref: '#/components/schemas/Timestamp' }
+        errorCode: { type: [string, 'null'] }
+    LineSettings:
+      type: object
+      required: [welcomeMessage, businessHours, afterHoursAi, menuItems]
+      properties:
+        welcomeMessage: { type: string, maxLength: 1000 }
+        businessHours:
+          type: object
+          required: [start, end]
+          properties:
+            start: { type: string, pattern: '^([01]\d|2[0-3]):[0-5]\d$' }
+            end: { type: string, pattern: '^([01]\d|2[0-3]):[0-5]\d$' }
+        afterHoursAi: { type: boolean }
+        menuItems:
+          type: array
+          maxItems: 6
+          items:
+            type: object
+            required: [label, action]
+            properties:
+              label: { type: string, maxLength: 20 }
+              action: { type: string, enum: [report_problem, check_status, faq, contact_staff] }
+
+    ProblemCategory:
+      allOf:
+        - $ref: '#/components/schemas/ProblemCategoryInput'
+        - type: object
+          required: [id]
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+    ProblemCategoryInput:
+      type: object
+      required:
+        [
+          name,
+          keywords,
+          defaultPriority,
+          ackSlaMinutes,
+          resolveSlaMinutes,
+          requiredFields,
+          requirePhotoOnResolve,
+        ]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        keywords: { type: array, items: { type: string, maxLength: 50 }, maxItems: 30 }
+        defaultPriority: { $ref: '#/components/schemas/TicketPriority' }
+        ackSlaMinutes: { type: integer, minimum: 1 }
+        resolveSlaMinutes: { type: integer, minimum: 1 }
+        requiredFields:
+          type: array
+          description: What the bot must ask the customer
+          items: { type: string, enum: [asset_code, photo, amount, phone, description] }
+        requirePhotoOnResolve: { type: boolean }
+
+    # ── team / security ──
+    Member:
+      type: object
+      required: [user, role, area, openTickets, lastActiveAt]
+      properties:
+        user: { $ref: '#/components/schemas/UserRef' }
+        role: { $ref: '#/components/schemas/TenantRole' }
+        area: { type: [string, 'null'] }
+        openTickets: { type: integer }
+        loginProvider: { type: string, enum: [line, google] }
+        lastActiveAt: { type: [string, 'null'], format: date-time }
+    Invitation:
+      type: object
+      required: [id, role, expiresAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        email: { type: [string, 'null'], format: email }
+        role: { $ref: '#/components/schemas/TenantRole' }
+        expiresAt: { $ref: '#/components/schemas/Timestamp' }
+        link: { type: [string, 'null'], format: uri, description: Returned once on creation }
+    TenantSecurity:
+      type: object
+      required: [idleTimeoutMinutes, loginProviders, autoApproveReadOnlySupport]
+      properties:
+        idleTimeoutMinutes: { type: integer, enum: [60, 480, 720] }
+        loginProviders:
+          type: object
+          required: [line, google]
+          properties:
+            line: { type: boolean }
+            google: { type: boolean }
+        autoApproveReadOnlySupport: { type: boolean, default: false }
+
+    SupportAccessScope:
+      type: string
+      enum: [line.read, line.write, tickets.read, tickets.read_media, knowledge.read]
+    SupportAccessStatus:
+      type: string
+      enum: [pending, active, denied, expired, revoked]
+    SupportAccessRequest:
+      type: object
+      required: [id, requestedBy, reason, scopes, durationMinutes, status, requestedAt, expiresAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        requestedBy: { type: string, description: ServiceFlow staff display name }
+        reason: { type: string }
+        scopes: { type: array, items: { $ref: '#/components/schemas/SupportAccessScope' } }
+        durationMinutes: { type: integer, enum: [30, 60, 120] }
+        status: { $ref: '#/components/schemas/SupportAccessStatus' }
+        breakGlass: { type: boolean, default: false }
+        requestedAt: { $ref: '#/components/schemas/Timestamp' }
+        expiresAt: { type: [string, 'null'], format: date-time }
+
+    # ── reports / billing / audit ──
+    ReportSummary:
+      type: object
+      required: [kpis, openByStatus, daily, topProblems, recentActivity]
+      properties:
+        kpis:
+          type: object
+          required: [newUnassigned, inProgress, waiting, resolvedToday, resolvedWithinSla]
+          properties:
+            newUnassigned: { type: integer }
+            newBySource: { type: object, additionalProperties: { type: integer } }
+            inProgress: { type: integer }
+            assigned: { type: integer }
+            waiting: { type: integer }
+            waitingCustomer: { type: integer }
+            waitingParts: { type: integer }
+            resolvedToday: { type: integer }
+            resolvedWithinSla: { type: integer }
+            totalTickets: { type: integer }
+            firstResponseMinutesP50: { type: [number, 'null'] }
+            resolutionMinutesP50: { type: [number, 'null'] }
+            slaMetRate: { type: [number, 'null'] }
+            csatAverage: { type: [number, 'null'] }
+        openByStatus:
+          type: object
+          additionalProperties: { type: integer }
+        daily:
+          type: array
+          items:
+            type: object
+            required: [date, total]
+            properties:
+              date: { type: string, format: date }
+              total: { type: integer }
+              aiResolved: { type: integer }
+        topProblems:
+          type: array
+          items:
+            type: object
+            required: [categoryName, share]
+            properties:
+              categoryName: { type: string }
+              share: { type: number, minimum: 0, maximum: 1 }
+        slaBreached:
+          type: array
+          items: { $ref: '#/components/schemas/TicketRef' }
+        recentActivity:
+          type: array
+          items:
+            type: object
+            required: [at, text]
+            properties:
+              at: { $ref: '#/components/schemas/Timestamp' }
+              text: { type: string }
+              ticket:
+                oneOf:
+                  - $ref: '#/components/schemas/TicketRef'
+                  - type: 'null'
+    SlaByCategory:
+      type: object
+      required: [categoryName, tickets, metRate, targetMinutes]
+      properties:
+        categoryName: { type: string }
+        tickets: { type: integer }
+        metRate: { type: number }
+        targetMinutes: { type: integer }
+    TechnicianPerformance:
+      type: object
+      required: [user, resolved, avgResolutionMinutes, slaMetRate]
+      properties:
+        user: { $ref: '#/components/schemas/UserRef' }
+        resolved: { type: integer }
+        avgResolutionMinutes: { type: [number, 'null'] }
+        slaMetRate: { type: [number, 'null'] }
+        csatAverage: { type: [number, 'null'] }
+    AssetProblemStat:
+      type: object
+      required: [asset, tickets, topProblem]
+      properties:
+        asset: { $ref: '#/components/schemas/AssetRef' }
+        tickets: { type: integer }
+        topProblem: { type: [string, 'null'] }
+    UsageMeter:
+      type: object
+      required: [used, limit]
+      properties:
+        used: { type: integer }
+        limit: { type: [integer, 'null'], description: null = unlimited }
+    Usage:
+      type: object
+      required: [periodStart, periodEnd, aiAnswers, tickets, assets, members]
+      properties:
+        periodStart: { type: string, format: date }
+        periodEnd: { type: string, format: date }
+        aiAnswers:
+          allOf:
+            - $ref: '#/components/schemas/UsageMeter'
+            - type: object
+              properties:
+                selfResolvedRate: { type: [number, 'null'] }
+        tickets: { $ref: '#/components/schemas/UsageMeter' }
+        assets: { $ref: '#/components/schemas/UsageMeter' }
+        members: { $ref: '#/components/schemas/UsageMeter' }
+    Subscription:
+      type: object
+      required: [planName, status, renewsAt]
+      properties:
+        planName: { type: string }
+        status: { type: string, enum: [trial, active, past_due, suspended] }
+        renewsAt: { type: [string, 'null'], format: date }
+        trialEndsAt: { type: [string, 'null'], format: date }
+    AuditLogEntry:
+      type: object
+      required: [id, actor, action, target, createdAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        actor:
+          type: object
+          required: [type, displayName]
+          properties:
+            type: { type: string, enum: [user, platform, system] }
+            displayName: { type: string }
+        action: { type: string }
+        target: { type: [string, 'null'] }
+        ip: { type: [string, 'null'] }
+        grantId: { type: [string, 'null'], format: uuid }
+        createdAt: { $ref: '#/components/schemas/Timestamp' }

@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "appName": "ServiceFlow Console",
+    "titleTemplate": "%s · ServiceFlow Console"
+  },
+  "common": {
+    "sampleData": "ข้อมูลตัวอย่าง",
+    "loading": "กำลังโหลด…",
+    "retry": "ลองอีกครั้ง",
+    "backHome": "กลับหน้าหลัก",
+    "requestId": "รหัสอ้างอิง"
+  },
+  "states": {
+    "comingSoonTitle": "เร็ว ๆ นี้",
+    "comingSoonDescription": "หน้านี้กำลังอยู่ระหว่างออกแบบ จะเปิดใช้งานในเวอร์ชันถัดไป",
+    "errorTitle": "โหลดข้อมูลไม่สำเร็จ",
+    "errorDescription": "เกิดข้อผิดพลาดชั่วคราว ลองใหม่อีกครั้ง ถ้ายังไม่ได้ให้ตรวจ log ด้วยรหัสอ้างอิง",
+    "forbiddenTitle": "ไม่มีสิทธิ์เข้าถึง",
+    "forbiddenDescription": "บทบาทของคุณบนแพลตฟอร์มไม่มีสิทธิ์ดูหน้านี้",
+    "notFoundTitle": "ไม่พบหน้านี้",
+    "notFoundDescription": "ลิงก์อาจไม่ถูกต้อง หรือข้อมูลนี้ถูกลบไปแล้ว",
+    "sessionRequiredTitle": "ต้องยืนยันตัวตนด้วย Passkey",
+    "sessionRequiredDescription": "เซสชันคอนโซลหมดอายุหรือยังไม่ได้ยืนยัน Passkey (หน้ายืนยัน Passkey ยังไม่มีแบบ)",
+    "pendingTitle": "หน้านี้ยังไม่ได้สร้างตามแบบ",
+    "pendingDescription": "โครงสร้างและ service พร้อมแล้ว รอสร้าง UI ตามแบบ {design}"
+  },
+  "shell": {
+    "brandName": "ServiceFlow Console",
+    "brandTagline": "เจ้าของระบบเท่านั้น",
+    "mainNav": "เมนูคอนโซล",
+    "searchLabel": "ค้นหาบริษัทหรือ Tenant ID",
+    "searchPlaceholder": "ค้นหาบริษัท, Tenant ID, LINE OA",
+    "privacyNote": "ไม่เห็นข้อความลูกค้าของ Tenant จนกว่าจะได้รับอนุญาต",
+    "environment": "{env} · {region}",
+    "tenantsCount": "{count} บริษัท",
+    "systemAlerts": "{count} เรื่องที่ต้องดูแล",
+    "operatorSubtitle": "{role} · 2FA ด้วยคีย์"
+  },
+  "environments": {
+    "local": "Local",
+    "staging": "Staging",
+    "production": "Production"
+  },
+  "roles": {
+    "platform_owner": "Platform owner",
+    "platform_support": "Platform support",
+    "platform_readonly": "Read-only"
+  },
+  "nav": {
+    "overview": "ภาพรวมแพลตฟอร์ม",
+    "tenants": "บริษัทลูกค้า",
+    "system": "สุขภาพระบบ",
+    "ai": "AI และต้นทุน",
+    "supportAccess": "การเข้าช่วยเหลือ",
+    "audit": "Audit log"
+  },
+  "pages": {
+    "overview": "ภาพรวมแพลตฟอร์ม",
+    "tenants": "บริษัทลูกค้า (Tenants)",
+    "tenant": "รายละเอียดบริษัทลูกค้า",
+    "system": "สุขภาพระบบและต้นทุน",
+    "ai": "AI และต้นทุน",
+    "supportAccess": "การเข้าช่วยเหลือ",
+    "audit": "Audit log"
+  }
+}

@@ -1,0 +1,846 @@
+openapi: 3.1.0
+info:
+  title: ServiceFlow AI — Console API (platform owner)
+  version: 0.1.0-draft
+  summary: Contract between apps/console and services/api /console/v1 (plan §7.6, §22). DRAFT — backend reviews before implementing.
+  description: |
+    - Served only on the console host, behind Cloudflare Access (JWT in Cf-Access-Jwt-Assertion) + Passkey session.
+    - Never accepts the customer session; the customer API never accepts the console session.
+    - Aggregates only. Data inside a tenant requires an active Support access grant (plan §22.4).
+    - Same conventions as the customer API: camelCase, ISO-8601 UTC, RFC 9457 errors, cursor pagination.
+servers:
+  - url: /console/v1
+security:
+  - consoleSession: []
+tags:
+  - name: auth
+  - name: overview
+  - name: tenants
+  - name: support-access
+  - name: system
+  - name: ai
+  - name: audit
+
+paths:
+  /auth/passkey/options:
+    post:
+      tags: [auth]
+      operationId: passkeyOptions
+      security: []
+      responses:
+        '200':
+          description: WebAuthn request options (opaque JSON passed to the browser API)
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        default: { $ref: '#/components/responses/Problem' }
+  /auth/passkey/verify:
+    post:
+      tags: [auth]
+      operationId: passkeyVerify
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '204': { description: Console session created }
+        default: { $ref: '#/components/responses/Problem' }
+  /me:
+    get:
+      tags: [auth]
+      operationId: getConsoleMe
+      x-draft-note: Not in plan table 18; the sidebar footer shows the operator name, role and "2FA ด้วยคีย์".
+      responses:
+        '200':
+          description: Current platform operator
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Operator' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /overview:
+    get:
+      tags: [overview]
+      operationId: getOverview
+      responses:
+        '200':
+          description: Platform-wide numbers
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlatformOverview' }
+        default: { $ref: '#/components/responses/Problem' }
+  /alerts:
+    get:
+      tags: [overview]
+      operationId: listAlerts
+      responses:
+        '200':
+          description: Things that need attention now
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/PlatformAlert' } }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /tenants:
+    get:
+      tags: [tenants]
+      operationId: listTenants
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - name: q
+          in: query
+          description: Company name, tenant id or LINE OA id
+          schema: { type: string, maxLength: 100 }
+        - name: plan
+          in: query
+          schema: { $ref: '#/components/schemas/PlanCode' }
+        - name: health
+          in: query
+          schema: { $ref: '#/components/schemas/TenantHealth' }
+        - name: businessType
+          in: query
+          schema: { $ref: '#/components/schemas/BusinessType' }
+        - name: sort
+          in: query
+          schema:
+            {
+              type: string,
+              enum: [lastActiveAt, -lastActiveAt, tickets7d, -tickets7d, name],
+              default: -lastActiveAt,
+            }
+      responses:
+        '200':
+          description: Page of tenants
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CursorPage'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/TenantSummary' } }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [tenants]
+      operationId: createTenant
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug, plan, businessType, ownerEmail]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 200 }
+                slug: { type: string, pattern: '^[a-z0-9][a-z0-9-]{1,40}$' }
+                plan: { $ref: '#/components/schemas/PlanCode' }
+                businessType: { $ref: '#/components/schemas/BusinessType' }
+                ownerEmail: { type: string, format: email }
+      responses:
+        '201':
+          description: Created, owner invitation sent
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantDetail' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tenants/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [tenants]
+      operationId: getTenant
+      responses:
+        '200':
+          description: Tenant-level detail (no end-customer data)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantDetail' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tenants/{id}/usage:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [tenants]
+      operationId: getTenantUsage
+      responses:
+        '200':
+          description: Usage this month
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantUsage' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tenants/{id}/line-health:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [tenants]
+      operationId: getTenantLineHealth
+      responses:
+        '200':
+          description: LINE OA delivery health (status + error codes only)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LineHealth' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tenants/{id}/onboarding:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [tenants]
+      operationId: getTenantOnboarding
+      responses:
+        '200':
+          description: 8-step onboarding progress
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [steps]
+                properties:
+                  steps: { type: array, items: { $ref: '#/components/schemas/OnboardingStep' } }
+        default: { $ref: '#/components/responses/Problem' }
+  /tenants/{id}/plan:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    patch:
+      tags: [tenants]
+      operationId: updateTenantPlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plan: { $ref: '#/components/schemas/PlanCode' }
+                trialEndsAt: { type: string, format: date }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantDetail' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tenants/{id}/status:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    patch:
+      tags: [tenants]
+      operationId: updateTenantStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status, reason]
+              properties:
+                status: { type: string, enum: [active, suspended] }
+                reason: { type: string, minLength: 1, maxLength: 500 }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantDetail' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tenants/{id}/support-access-requests:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [support-access]
+      operationId: listTenantSupportAccess
+      x-draft-note: Not in plan table 18 as GET; the tenant detail page shows the current grant state.
+      responses:
+        '200':
+          description: Requests and grants for this tenant
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/SupportAccessGrant' } }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [support-access]
+      operationId: requestSupportAccess
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason, durationMinutes, scopes]
+              properties:
+                reason: { type: string, minLength: 1, maxLength: 1000 }
+                durationMinutes: { type: integer, enum: [30, 60, 120] }
+                scopes:
+                  {
+                    type: array,
+                    minItems: 1,
+                    items: { $ref: '#/components/schemas/SupportAccessScope' },
+                  }
+      responses:
+        '201':
+          description: Pending — the tenant owner is notified
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SupportAccessGrant' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tenants/{id}/break-glass:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [support-access]
+      operationId: breakGlass
+      summary: Emergency read-only access (platform_owner, SEV1 only, Passkey re-check, max 30 min)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason, incidentId, passkeyAssertion]
+              properties:
+                reason: { type: string, minLength: 1, maxLength: 1000 }
+                incidentId: { type: string }
+                passkeyAssertion: { type: object, additionalProperties: true }
+      responses:
+        '201':
+          description: Active grant
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SupportAccessGrant' }
+        default: { $ref: '#/components/responses/Problem' }
+  /tenants/{id}/audit:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [audit]
+      operationId: listTenantAudit
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Tenant audit log + platform audit log entries for this tenant
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CursorPage'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/AuditEntry' } }
+        default: { $ref: '#/components/responses/Problem' }
+  /audit:
+    get:
+      tags: [audit]
+      operationId: listPlatformAudit
+      x-draft-note: Platform audit log page (apps/console/app/audit, plan §22.6). Not in table 18.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Every action by platform operators
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CursorPage'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/AuditEntry' } }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /system/services:
+    get:
+      tags: [system]
+      operationId: listServices
+      responses:
+        '200':
+          description: Health per service
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, slo]
+                properties:
+                  slo: { $ref: '#/components/schemas/SloSummary' }
+                  data: { type: array, items: { $ref: '#/components/schemas/ServiceHealth' } }
+        default: { $ref: '#/components/responses/Problem' }
+  /system/queue:
+    get:
+      tags: [system]
+      operationId: getQueue
+      responses:
+        '200':
+          description: Queue depth and dead jobs
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QueueStatus' }
+        default: { $ref: '#/components/responses/Problem' }
+  /system/backups:
+    get:
+      tags: [system]
+      operationId: listBackups
+      responses:
+        '200':
+          description: Recent backups and restore drills
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Backup' } }
+        default: { $ref: '#/components/responses/Problem' }
+  /system/deploys:
+    get:
+      tags: [system]
+      operationId: listDeploys
+      responses:
+        '200':
+          description: Recent deploys
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Deploy' } }
+        default: { $ref: '#/components/responses/Problem' }
+  /system/jobs/{id}/retry:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [system]
+      operationId: retryJob
+      responses:
+        '204': { description: Re-queued }
+        default: { $ref: '#/components/responses/Problem' }
+  /system/jobs/{id}/discard:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [system]
+      operationId: discardJob
+      responses:
+        '204': { description: Discarded }
+        default: { $ref: '#/components/responses/Problem' }
+  /ai/costs:
+    get:
+      tags: [ai]
+      operationId: getAiCosts
+      responses:
+        '200':
+          description: AI budget and cost breakdown this month
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiCosts' }
+        default: { $ref: '#/components/responses/Problem' }
+  /ai/evals:
+    get:
+      tags: [ai]
+      operationId: getAiEvals
+      responses:
+        '200':
+          description: Latest pre-deploy quality evaluation
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiEvalRun' }
+        default: { $ref: '#/components/responses/Problem' }
+
+components:
+  securitySchemes:
+    consoleSession:
+      type: apiKey
+      in: cookie
+      name: __Host-sf_console
+      description: Console session (Passkey-verified, max 12h). Mutations also require X-CSRF-Token.
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    Problem:
+      description: Error (RFC 9457)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    Timestamp: { type: string, format: date-time }
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        requestId: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string }
+              message: { type: string }
+    CursorPage:
+      type: object
+      required: [nextCursor]
+      properties:
+        nextCursor: { type: [string, 'null'] }
+
+    PlatformRole:
+      type: string
+      enum: [platform_owner, platform_support, platform_readonly]
+    Operator:
+      type: object
+      required: [id, displayName, role, environment]
+      properties:
+        id: { type: string, format: uuid }
+        displayName: { type: string }
+        role: { $ref: '#/components/schemas/PlatformRole' }
+        passkeyVerified: { type: boolean }
+        environment:
+          type: object
+          required: [name, region, version]
+          properties:
+            name: { type: string, enum: [local, staging, production] }
+            region: { type: string, examples: [สิงคโปร์] }
+            version: { type: string, examples: [v1.8.2] }
+
+    PlanCode:
+      type: string
+      enum: [trial, starter, pilot, business]
+    TenantHealth:
+      type: string
+      enum: [good, watch, risk]
+      description: Plan §22.2 health rules (computed nightly)
+    BusinessType:
+      type: string
+      enum: [vending, laundry, ev_charging, field_service]
+    LineState:
+      type: string
+      enum: [ok, failing, not_connected]
+
+    PlatformOverview:
+      type: object
+      required:
+        [
+          activeTenants,
+          paidTenants,
+          trialTenants,
+          mrr,
+          tickets7d,
+          aiResolvedRate7d,
+          availability30d,
+          sloTarget,
+          trialFunnel,
+          system,
+          aiBudget,
+        ]
+      properties:
+        activeTenants: { type: integer }
+        paidTenants: { type: integer }
+        trialTenants: { type: integer }
+        mrr:
+          type: [number, 'null']
+          description: null until pricing is set (design shows "฿ [MRR]")
+        tickets7d: { type: integer }
+        aiResolvedRate7d: { type: number }
+        availability30d: { type: number }
+        sloTarget: { type: number }
+        trialFunnel:
+          type: array
+          items:
+            type: object
+            required: [step, count]
+            properties:
+              step: { type: string, enum: [signed_up, line_connected, first_ticket, converted] }
+              count: { type: integer }
+        biggestDropOff: { type: [string, 'null'] }
+        system: { $ref: '#/components/schemas/SystemSnapshot' }
+        aiBudget: { $ref: '#/components/schemas/AiBudget' }
+    SystemSnapshot:
+      type: object
+      required: [apiP95Ms, errorRate1h, queueDepth, deadJobs, lastBackup]
+      properties:
+        apiP95Ms: { type: number }
+        errorRate1h: { type: number }
+        queueDepth: { type: integer }
+        deadJobs: { type: integer }
+        lastBackup:
+          type: object
+          required: [at, ok]
+          properties:
+            at: { $ref: '#/components/schemas/Timestamp' }
+            ok: { type: boolean }
+    AiBudget:
+      type: object
+      required: [usedRate, monthElapsedRate, topTenants]
+      properties:
+        usedRate: { type: number }
+        monthElapsedRate: { type: number }
+        topTenants:
+          type: array
+          items:
+            type: object
+            required: [tenantName, share]
+            properties:
+              tenantName: { type: string }
+              share: { type: number }
+
+    PlatformAlert:
+      type: object
+      required: [id, severity, title, detail, action]
+      properties:
+        id: { type: string }
+        severity: { type: string, enum: [critical, warning, onboarding, opportunity] }
+        tenant:
+          oneOf:
+            - $ref: '#/components/schemas/TenantRef'
+            - type: 'null'
+        title: { type: string }
+        detail: { type: string }
+        action:
+          type: object
+          required: [kind]
+          properties:
+            kind: { type: string, enum: [open_tenant, open_queue, help_onboarding, view_usage] }
+            targetId: { type: [string, 'null'] }
+
+    TenantRef:
+      type: object
+      required: [id, slug, name]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string, examples: [t_smartvend] }
+        name: { type: string }
+
+    TenantSummary:
+      allOf:
+        - $ref: '#/components/schemas/TenantRef'
+        - type: object
+          required:
+            [plan, health, businessType, line, tickets7d, lastActiveAt, quotaUsedRate, renewsAt]
+          properties:
+            plan: { $ref: '#/components/schemas/PlanCode' }
+            health: { $ref: '#/components/schemas/TenantHealth' }
+            businessType: { $ref: '#/components/schemas/BusinessType' }
+            line: { $ref: '#/components/schemas/LineState' }
+            tickets7d: { type: integer }
+            quotaUsedRate: { type: [number, 'null'] }
+            lastActiveAt: { type: [string, 'null'], format: date-time }
+            online: { type: boolean }
+            renewsAt: { type: [string, 'null'], format: date }
+
+    TenantDetail:
+      allOf:
+        - $ref: '#/components/schemas/TenantSummary'
+        - type: object
+          required: [status, ownerEmail, createdAt, billing]
+          properties:
+            status: { type: string, enum: [active, suspended] }
+            ownerEmail: { type: string, format: email }
+            createdAt: { $ref: '#/components/schemas/Timestamp' }
+            billing:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [trial, paid, overdue] }
+                price: { type: [number, 'null'] }
+                overdueDays: { type: [integer, 'null'] }
+                trialEndsAt: { type: [string, 'null'], format: date }
+            healthReasons: { type: array, items: { type: string } }
+    TenantUsage:
+      type: object
+      required: [tickets, aiAnswers, assets, members, aiCost]
+      properties:
+        tickets: { $ref: '#/components/schemas/Meter' }
+        aiAnswers: { $ref: '#/components/schemas/Meter' }
+        assets: { $ref: '#/components/schemas/Meter' }
+        members: { $ref: '#/components/schemas/Meter' }
+        aiCost: { type: [number, 'null'] }
+    Meter:
+      type: object
+      required: [used, limit]
+      properties:
+        used: { type: integer }
+        limit: { type: [integer, 'null'] }
+    LineHealth:
+      type: object
+      required: [state, webhookFailures1h, lastSuccessAt, lastErrorCode]
+      properties:
+        state: { $ref: '#/components/schemas/LineState' }
+        webhookFailures1h: { type: integer }
+        lastSuccessAt: { type: [string, 'null'], format: date-time }
+        lastErrorCode: { type: [string, 'null'] }
+        lastErrorSummary: { type: [string, 'null'] }
+    OnboardingStep:
+      type: object
+      required: [key, label, done]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        done: { type: boolean }
+        doneAt: { type: [string, 'null'], format: date-time }
+
+    SupportAccessScope:
+      type: string
+      enum: [line.read, line.write, tickets.read, tickets.read_media, knowledge.read]
+    SupportAccessGrant:
+      type: object
+      required: [id, status, reason, scopes, durationMinutes, requestedBy, requestedAt, expiresAt]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [pending, active, denied, expired, revoked] }
+        reason: { type: string }
+        scopes: { type: array, items: { $ref: '#/components/schemas/SupportAccessScope' } }
+        durationMinutes: { type: integer }
+        breakGlass: { type: boolean }
+        requestedBy: { type: string }
+        requestedAt: { $ref: '#/components/schemas/Timestamp' }
+        expiresAt: { type: [string, 'null'], format: date-time }
+
+    AuditEntry:
+      type: object
+      required: [id, source, actor, action, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        source: { type: string, enum: [tenant, platform] }
+        actor: { type: string }
+        action: { type: string }
+        target: { type: [string, 'null'] }
+        grantId: { type: [string, 'null'], format: uuid }
+        createdAt: { $ref: '#/components/schemas/Timestamp' }
+
+    SloSummary:
+      type: object
+      required: [availability30d, target, errorBudgetRemaining]
+      properties:
+        availability30d: { type: number }
+        target: { type: number }
+        errorBudgetRemaining: { type: number }
+    ServiceHealth:
+      type: object
+      required: [name, status, detail]
+      properties:
+        name: { type: string }
+        status: { type: string, enum: [ok, degraded, down] }
+        detail: { type: [string, 'null'] }
+        p95Ms: { type: [number, 'null'] }
+    QueueStatus:
+      type: object
+      required: [depth, deadJobs]
+      properties:
+        depth: { type: integer }
+        deadJobs:
+          type: array
+          items:
+            type: object
+            required: [id, kind, attempts, lastError, failedAt]
+            properties:
+              id: { type: string, format: uuid }
+              kind: { type: string }
+              tenant:
+                oneOf:
+                  - $ref: '#/components/schemas/TenantRef'
+                  - type: 'null'
+              attempts: { type: integer }
+              lastError: { type: string }
+              failedAt: { $ref: '#/components/schemas/Timestamp' }
+    Backup:
+      type: object
+      required: [at, kind, ok]
+      properties:
+        at: { $ref: '#/components/schemas/Timestamp' }
+        kind: { type: string, enum: [nightly, pitr, restore_drill] }
+        ok: { type: boolean }
+        sizeBytes: { type: [integer, 'null'] }
+        detail: { type: [string, 'null'] }
+    Deploy:
+      type: object
+      required: [version, at, environment, ok]
+      properties:
+        version: { type: string }
+        at: { $ref: '#/components/schemas/Timestamp' }
+        environment: { type: string, enum: [staging, production] }
+        ok: { type: boolean }
+        commit: { type: [string, 'null'] }
+    AiCosts:
+      type: object
+      required: [budget, byModel, byTenant]
+      properties:
+        budget: { $ref: '#/components/schemas/AiBudget' }
+        byModel:
+          type: array
+          items:
+            type: object
+            required: [model, requests, cost]
+            properties:
+              model: { type: string }
+              requests: { type: integer }
+              cost: { type: [number, 'null'] }
+        byTenant:
+          type: array
+          items:
+            type: object
+            required: [tenant, cost, share]
+            properties:
+              tenant: { $ref: '#/components/schemas/TenantRef' }
+              cost: { type: [number, 'null'] }
+              share: { type: number }
+    AiEvalRun:
+      type: object
+      required: [ranAt, passed, metrics]
+      properties:
+        ranAt: { $ref: '#/components/schemas/Timestamp' }
+        passed: { type: boolean }
+        metrics:
+          type: array
+          items:
+            type: object
+            required: [name, value, threshold, passed]
+            properties:
+              name: { type: string }
+              value: { type: number }
+              threshold: { type: number }
+              passed: { type: boolean }

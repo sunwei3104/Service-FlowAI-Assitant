@@ -1,0 +1,88 @@
+/*
+ * Global stylesheet shared by apps/web and apps/console.
+ * Every color/font/radius/shadow comes from docs/design/tokens.json via @serviceflow/ui-tokens.
+ * Do NOT add raw hex/rgb values here or in components — add a token instead (ask first).
+ */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '@serviceflow/ui-tokens/tokens.css';
+@import '@serviceflow/ui-tokens/theme.css';
+
+/* Scan shared components; each app adds its own @source for its src folder. */
+@source '../components';
+
+/*
+ * shadcn/ui bridge — shadcn primitives use generic names (bg-background, text-muted-foreground…).
+ * These are ALIASES to ServiceFlow tokens, not new colors, so `shadcn add` keeps working.
+ * Prefer ServiceFlow names (bg-surface-000, text-ink-muted…) in our own code.
+ */
+@theme inline {
+  --color-background: var(--sf-color-surface-100);
+  --color-foreground: var(--sf-color-ink);
+  --color-card: var(--sf-color-surface-000);
+  --color-card-foreground: var(--sf-color-ink);
+  --color-popover: var(--sf-color-surface-000);
+  --color-popover-foreground: var(--sf-color-ink);
+  --color-primary-foreground: var(--sf-color-on-primary);
+  --color-secondary: var(--sf-color-surface-200);
+  --color-secondary-foreground: var(--sf-color-ink);
+  --color-muted: var(--sf-color-surface-200);
+  --color-muted-foreground: var(--sf-color-ink-muted);
+  --color-accent: var(--sf-color-surface-200);
+  --color-accent-foreground: var(--sf-color-ink);
+  --color-destructive: var(--sf-color-danger);
+  --color-destructive-foreground: var(--sf-color-on-primary);
+  --color-border: var(--sf-color-hairline);
+  --color-input: var(--sf-color-control-border);
+  --color-ring: var(--sf-color-focus);
+}
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-border);
+  }
+
+  html {
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-surface-100);
+    color: var(--color-ink);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Underlined like the designs (and WCAG 1.4.1: links in text must not rely on color alone). */
+  a {
+    color: var(--color-primary-ink);
+    text-decoration: underline;
+  }
+  a:hover {
+    color: var(--color-primary-900);
+  }
+
+  /* Plan §21.1 / tokens "focus": 2px ring, offset 2px, on every interactive element. */
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::after,
+    ::before {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

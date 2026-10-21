@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
+    "baseUrl": ".",
+    "paths": { "@serviceflow/ui/*": ["./src/*"] }
+  },
+  "include": ["src", "vitest.config.ts", "vitest.setup.ts"]
+}

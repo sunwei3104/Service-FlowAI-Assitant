@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="th"><head><style data-dc-design-system-vars="">@layer{:root{--navy:#111827;--primary:#2563eb;--on-primary:#ffffff;--primary-ink:#1d4ed8;--primary-subtle:#dbeafe;--success:#16a34a;--success-ink:#15803d;--success-subtle:#dcfce7;--warning:#f59e0b;--warning-ink:#b45309;--warning-subtle:#fef3c7;--danger:#dc2626;--danger-ink:#b91c1c;--danger-subtle:#fee2e2;--surface-100:#f9fafb;--surface-000:#ffffff;--surface-200:#f3f4f6;--hairline:#e5e7eb;--control-border:#6b7280;--ink:#111827;--ink-muted:#4b5563;--sidebar-ink:#f9fafb;--sidebar-ink-muted:#9ca3af;--focus:#2563eb;--status-new:#1d4ed8;--status-assigned:#4b5563;--status-progress:#2563eb;--status-waiting:#b45309;--status-resolved:#15803d;--shadow-sm:0 1px 2px rgba(17,24,39,0.06);--shadow-md:0 8px 24px rgba(17,24,39,0.10);--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-6:24px;--space-8:32px;--space-12:48px;--radius-sm:4px;--radius-md:8px;--radius-lg:12px;--radius-full:9999px;--sidebar-width:240px;--topbar-height:56px;--content-max:1280px;--font-sans:"IBM Plex Sans Thai", "Noto Sans Thai", system-ui, sans-serif;--font-display:"Chakra Petch", "IBM Plex Sans Thai", system-ui, sans-serif;--font-mono:"IBM Plex Mono", ui-monospace, monospace;--text-display-xl:600 56px/60px var(--font-display);--text-display-lg:600 36px/44px var(--font-display);--text-heading-1:600 24px/32px var(--font-sans);--text-heading-2:600 18px/28px var(--font-sans);--text-body:400 15px/24px var(--font-sans);--text-body-sm:400 13px/20px var(--font-sans);--text-label:600 12px/16px var(--font-sans);--text-code:500 13px/20px var(--font-mono);}}</style>
+
+
+<meta charset="utf-8">
+<title>สุขภาพระบบ · ServiceFlow Console</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+Thai:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#F9FAFB}
+a{color:#1D4ED8}a:hover{color:#1E3A8A}
+:focus-visible{outline:2px solid #2563EB;outline-offset:2px}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; font-family: 'IBM Plex Sans Thai', system-ui, sans-serif; color: #111827; background: #F9FAFB; font-size: 14px; line-height: 1.5">
+
+  <aside style="flex: 1 1 240px; max-width: 100%; box-sizing: border-box; background: #0B1220; color: #F9FAFB; padding: 16px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 4px 4px 0">
+      <svg width="32" height="32" sc-camel-view-box="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#F59E0B"></rect><path d="M9 20c0-5 14-3 14-8M9 12h4M19 20h4" stroke="#111827" stroke-width="2.2" fill="none" stroke-linecap="round"></path></svg>
+      <div style="display: flex; flex-direction: column; line-height: 1.2"><span style="font-weight: 700; font-size: 16px">ServiceFlow Console</span><span style="font-size: 12px; color: #FCD34D">เจ้าของระบบเท่านั้น</span></div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid #374151; font-size: 13px"><span style="width: 8px; height: 8px; border-radius: 9999px; background: #4ADE80"></span><span style="flex: 1">Production · สิงคโปร์</span><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; color: #9CA3AF; font-size: 12px">v1.8.2</span></div>
+    <nav aria-label="เมนูคอนโซล" style="display: flex; flex-wrap: wrap; gap: 4px">
+      <a href="OpsOverview.dc.html" style="flex: 1 1 160px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 8px; color: #D1D5DB; text-decoration: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>ภาพรวมแพลตฟอร์ม</a>
+      <a href="OpsTenants.dc.html" style="flex: 1 1 160px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 8px; color: #D1D5DB; text-decoration: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V8l6-4v17M9 21h12V10l-6-3"></path><path d="M13 13h4M13 17h4"></path></svg><span style="flex: 1">บริษัทลูกค้า</span><span style="font-size: 12px; color: #9CA3AF">14</span></a>
+      <a href="OpsSystem.dc.html" aria-current="page" style="flex: 1 1 160px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 8px; background: #F9FAFB; color: #111827; font-weight: 600; text-decoration: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"></path></svg><span style="flex: 1">สุขภาพระบบ</span><span style="min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 9999px; background: #F59E0B; color: #111827; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center">2</span></a>
+      <a href="OpsSystem.dc.html" style="flex: 1 1 160px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 8px; color: #D1D5DB; text-decoration: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"></path></svg>AI และต้นทุน</a>
+      <a href="OpsTenantDetail.dc.html" style="flex: 1 1 160px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 8px; color: #D1D5DB; text-decoration: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>การเข้าช่วยเหลือ</a>
+      <a href="OpsSystem.dc.html" style="flex: 1 1 160px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 8px; color: #D1D5DB; text-decoration: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h14v16H5z"></path><path d="M9 8h6M9 12h6M9 16h4"></path></svg>Audit log</a>
+    </nav>
+    <div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 8px 4px; border-top: 1px solid #374151">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 9999px; background: #F59E0B; color: #111827; font-weight: 700; flex: none">ทก</span>
+      <span style="display: flex; flex-direction: column; line-height: 1.3"><span style="font-weight: 600; font-size: 13px">ทินกร (Sun)</span><span style="font-size: 12px; color: #9CA3AF">Platform owner · 2FA ด้วยคีย์</span></span>
+    </div>
+  </aside>
+
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; min-height: 56px; padding: 6px 24px; box-sizing: border-box; background: #FFFFFF; border-bottom: 1px solid #E5E7EB">
+      <nav aria-label="ตำแหน่งปัจจุบัน" style="display: flex; align-items: center; gap: 8px; color: #4B5563"><a href="OpsOverview.dc.html" style="color: #4B5563">คอนโซล</a><span aria-hidden="true">/</span><span style="color: #111827; font-weight: 600">สุขภาพระบบและต้นทุน</span></nav>
+      <span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 9999px; background: #FEF3C7; color: #B45309; font-size: 12px; font-weight: 600">ข้อมูลตัวอย่าง</span>
+      <span style="flex: 1 1 0"></span>
+      <a href="OpsSystem.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; font-weight: 600">กราฟละเอียดใน Grafana</a>
+      <a href="OpsSystem.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; font-weight: 600">ข้อผิดพลาดใน Sentry</a>
+    </header>
+
+    <main style="padding: 24px; display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 1320px; box-sizing: border-box">
+      <div>
+        <h1 style="margin: 0; font-size: 26px; line-height: 1.3; font-weight: 700">สุขภาพระบบและต้นทุน</h1>
+        <p style="margin: 2px 0 0; color: #4B5563">อัปเดตทุก 1 นาที · ล่าสุด 09:45:12</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px">
+        <div style="padding: 16px 18px; border: 1px solid #E5E7EB; border-radius: 12px; background: #FFFFFF; display: flex; flex-direction: column; gap: 4px"><span style="color: #4B5563; font-weight: 500">API พร้อมใช้งาน 30 วัน</span><span style="font-size: 30px; font-weight: 700; line-height: 1.15">99.95%</span><span style="font-size: 13px; color: #15803D; font-weight: 500">เป้า 99.9% · งบผิดพลาดเหลือ 50%</span></div>
+        <div style="padding: 16px 18px; border: 1px solid #E5E7EB; border-radius: 12px; background: #FFFFFF; display: flex; flex-direction: column; gap: 4px"><span style="color: #4B5563; font-weight: 500">LINE รับ → ตอบลูกค้า (p95)</span><span style="font-size: 30px; font-weight: 700; line-height: 1.15">1.8 วินาที</span><span style="font-size: 13px; color: #15803D; font-weight: 500">เป้าไม่เกิน 3 วินาที</span></div>
+        <div style="padding: 16px 18px; border: 1px solid #FCD34D; border-radius: 12px; background: #FFFBEB; display: flex; flex-direction: column; gap: 4px"><span style="color: #78350F; font-weight: 500">คิวงานเบื้องหลัง</span><span style="font-size: 30px; font-weight: 700; line-height: 1.15">12 รอ · 3 dead</span><span style="font-size: 13px; color: #78350F">dead job ต้องมีคนตัดสินใจ</span></div>
+        <div style="padding: 16px 18px; border: 1px solid #E5E7EB; border-radius: 12px; background: #FFFFFF; display: flex; flex-direction: column; gap: 4px"><span style="color: #4B5563; font-weight: 500">อัตราผิดพลาด 1 ชม.</span><span style="font-size: 30px; font-weight: 700; line-height: 1.15">0.3%</span><span style="font-size: 13px; color: #4B5563">ส่วนใหญ่มาจาก LINE 401 ของ 1 บริษัท</span></div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+        <section aria-labelledby="h-svc" style="flex: 3 1 560px; min-width: 0; border: 1px solid #E5E7EB; border-radius: 12px; background: #FFFFFF; overflow: hidden">
+          <h2 id="h-svc" style="margin: 0; padding: 14px 20px; font-size: 17px; font-weight: 600; border-bottom: 1px solid #E5E7EB">บริการในระบบ</h2>
+          <div style="overflow-x: auto">
+            <sc-raw-table style="width: 100%; min-width: 620px; border-collapse: collapse; font-size: 13px">
+              <sc-raw-thead><sc-raw-tr style="background: #F9FAFB; color: #4B5563; text-align: left"><sc-raw-th scope="col" style="padding: 8px 20px; font-weight: 600">บริการ</sc-raw-th><sc-raw-th scope="col" style="padding: 8px 12px; font-weight: 600">สถานะ</sc-raw-th><sc-raw-th scope="col" style="padding: 8px 12px; font-weight: 600">รายละเอียด</sc-raw-th><sc-raw-th scope="col" style="padding: 8px 20px 8px 12px; font-weight: 600">เวอร์ชัน</sc-raw-th></sc-raw-tr></sc-raw-thead>
+              <sc-raw-tbody>
+                <sc-raw-tr style="border-top: 1px solid #E5E7EB"><sc-raw-td style="padding: 10px 20px; font-weight: 500">API (Go)</sc-raw-td><sc-raw-td style="padding: 10px 12px; color: #15803D; font-weight: 600">ปกติ</sc-raw-td><sc-raw-td style="padding: 10px 12px; color: #4B5563">p95 210 ms · CPU 34%</sc-raw-td><sc-raw-td style="padding: 10px 20px 10px 12px; font-family: 'IBM Plex Mono', ui-monospace, monospace">v1.8.2</sc-raw-td></sc-raw-tr>
+                <sc-raw-tr style="border-top: 1px solid #E5E7EB"><sc-raw-td style="padding: 10px 20px; font-weight: 500">Worker (คิวงาน)</sc-raw-td><sc-raw-td style="padding: 10px 12px; color: #B45309; font-weight: 600">เฝ้าระวัง</sc-raw-td><sc-raw-td style="padding: 10px 12px; color: #4B5563">dead 3 · retry กำลังทำ 12</sc-raw-td><sc-raw-td style="padding: 10px 20px 10px 12px; font-family: 'IBM Plex Mono', ui-monospace, monospace">v1.8.2</sc-raw-td></sc-raw-tr>
+                <sc-raw-tr style="border-top: 1px solid #E5E7EB"><sc-raw-td style="padding: 10px 20px; font-weight: 500">Web dashboard</sc-raw-td><sc-raw-td style="padding: 10px 12px; color: #15803D; font-weight: 600">ปกติ</sc-raw-td><sc-raw-td style="padding: 10px 12px; color: #4B5563">หน้าโหลด p75 1.4 วินาที</sc-raw-td><sc-raw-td style="padding: 10px 20px 10px 12px; font-family: 'IBM Plex Mono', ui-monospace, monospace">v1.8.2</sc-raw-td></sc-raw-tr>
+                <sc-raw-tr style="border-top: 1px solid #E5E7EB"><sc-raw-td style="padding: 10px 20px; font-weight: 500">PostgreSQL 17</sc-raw-td><sc-raw-td style="padding: 10px 12px; color: #15803D; font-weight: 600">ปกติ</sc-raw-td><sc-raw-td style="padding: 10px 12px; color: #4B5563">เชื่อมต่อ 38/100 · ขนาด 4.2 GB · RLS เปิด</sc-raw-td><sc-raw-td style="padding: 10px 20px 10px 12px; font-family: 'IBM Plex Mono', ui-monospace, monospace">17.4</sc-raw-td></sc-raw-tr>
+                <sc-raw-tr style="border-top: 1px solid #E5E7EB"><sc-raw-td style="padding: 10px 20px; font-weight: 500">ที่เก็บรูป (R2)</sc-raw-td><sc-raw-td style="padding: 10px 12px; color: #15803D; font-weight: 600">ปกติ</sc-raw-td><sc-raw-td style="padding: 10px 12px; color: #4B5563">38 GB · ลิงก์รูปหมดอายุใน 10 นาที</sc-raw-td><sc-raw-td style="padding: 10px 20px 10px 12px; color: #4B5563">–</sc-raw-td></sc-raw-tr>
+                <sc-raw-tr style="border-top: 1px solid #E5E7EB"><sc-raw-td style="padding: 10px 20px; font-weight: 500">AI Gateway</sc-raw-td><sc-raw-td style="padding: 10px 12px; color: #15803D; font-weight: 600">ปกติ</sc-raw-td><sc-raw-td style="padding: 10px 12px; color: #4B5563">p95 2.1 วินาที · โมเดลสำรองพร้อม</sc-raw-td><sc-raw-td style="padding: 10px 20px 10px 12px; font-family: 'IBM Plex Mono', ui-monospace, monospace">v1.8.2</sc-raw-td></sc-raw-tr>
+                <sc-raw-tr style="border-top: 1px solid #E5E7EB"><sc-raw-td style="padding: 10px 20px; font-weight: 500">LINE Messaging API (ภายนอก)</sc-raw-td><sc-raw-td style="padding: 10px 12px; color: #15803D; font-weight: 600">ปกติ</sc-raw-td><sc-raw-td style="padding: 10px 12px; color: #4B5563">ปัญหา 401 เป็นของ 1 บริษัท ไม่ใช่ทั้งระบบ</sc-raw-td><sc-raw-td style="padding: 10px 20px 10px 12px; color: #4B5563">–</sc-raw-td></sc-raw-tr>
+              </sc-raw-tbody>
+            </sc-raw-table>
+          </div>
+        </section>
+
+        <div style="flex: 2 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+          <section aria-labelledby="h-bk" style="border: 1px solid #E5E7EB; border-radius: 12px; background: #FFFFFF; padding: 16px 20px; display: flex; flex-direction: column; gap: 8px">
+            <h2 id="h-bk" style="margin: 0; font-size: 17px; font-weight: 600">สำรองข้อมูล</h2>
+            <dl style="margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 13px">
+              <dt style="color: #4B5563">ล่าสุด</dt><dd style="margin: 0; text-align: right; color: #15803D; font-weight: 600">วันนี้ 03:00 สำเร็จ</dd>
+              <dt style="color: #4B5563">ย้อนเวลาได้</dt><dd style="margin: 0; text-align: right">7 วัน (point-in-time)</dd>
+              <dt style="color: #4B5563">เก็บสำเนา</dt><dd style="margin: 0; text-align: right">14 วัน · อีกภูมิภาค</dd>
+              <dt style="color: #4B5563">ซ้อมกู้คืนล่าสุด</dt><dd style="margin: 0; text-align: right">1 ต.ค. · ใช้เวลา 18 นาที</dd>
+            </dl>
+          </section>
+          <section aria-labelledby="h-dp" style="border: 1px solid #E5E7EB; border-radius: 12px; background: #FFFFFF; padding: 16px 20px; display: flex; flex-direction: column; gap: 8px">
+            <h2 id="h-dp" style="margin: 0; font-size: 17px; font-weight: 600">การ deploy ล่าสุด</h2>
+            <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13px">
+              <li style="display: flex; flex-wrap: wrap; gap: 4px 10px"><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 600">v1.8.2</span><span style="color: #4B5563; flex: 1 1 140px">เมื่อวาน 22:10 · ผ่านทดสอบครบ</span><span style="color: #15803D; font-weight: 600">สำเร็จ</span></li>
+              <li style="display: flex; flex-wrap: wrap; gap: 4px 10px"><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 600">v1.8.1</span><span style="color: #4B5563; flex: 1 1 140px">15 ต.ค. · migration ช้า ย้อนกลับใน 4 นาที</span><span style="color: #B45309; font-weight: 600">ย้อนกลับ</span></li>
+              <li style="display: flex; flex-wrap: wrap; gap: 4px 10px"><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 600">v1.8.0</span><span style="color: #4B5563; flex: 1 1 140px">12 ต.ค.</span><span style="color: #15803D; font-weight: 600">สำเร็จ</span></li>
+            </ol>
+          </section>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+        <section aria-labelledby="h-dead" style="flex: 1 1 460px; min-width: 0; border: 1px solid #E5E7EB; border-radius: 12px; background: #FFFFFF; overflow: hidden">
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid #E5E7EB"><h2 id="h-dead" style="margin: 0; font-size: 17px; font-weight: 600">Dead jobs (ลองครบ 5 ครั้งแล้วไม่สำเร็จ)</h2></div>
+          <ul style="list-style: none; margin: 0; padding: 0; font-size: 13px">
+            <li style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 20px; border-bottom: 1px solid #E5E7EB">
+              <div style="flex: 1 1 240px"><div style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 500">line_reply · t_fastlaundry</div><div style="color: #4B5563">401 Unauthorized · ต้องแก้ token ก่อน</div></div>
+              <button type="button" style="height: 40px; padding: 0 12px; border: 1px solid #6B7280; border-radius: 8px; background: #FFFFFF; font: inherit; cursor: pointer">ลองใหม่</button>
+              <button type="button" style="height: 40px; padding: 0 12px; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFFFFF; color: #4B5563; font: inherit; cursor: pointer">ทิ้ง</button>
+            </li>
+            <li style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 20px; border-bottom: 1px solid #E5E7EB">
+              <div style="flex: 1 1 240px"><div style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 500">line_reply · t_fastlaundry</div><div style="color: #4B5563">401 Unauthorized · ต้องแก้ token ก่อน</div></div>
+              <button type="button" style="height: 40px; padding: 0 12px; border: 1px solid #6B7280; border-radius: 8px; background: #FFFFFF; font: inherit; cursor: pointer">ลองใหม่</button>
+              <button type="button" style="height: 40px; padding: 0 12px; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFFFFF; color: #4B5563; font: inherit; cursor: pointer">ทิ้ง</button>
+            </li>
+            <li style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 20px">
+              <div style="flex: 1 1 240px"><div style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 500">import_assets · t_coffeebox</div><div style="color: #4B5563">แถว 12 รูปแบบวันที่ไม่ถูกต้อง</div></div>
+              <button type="button" style="height: 40px; padding: 0 12px; border: 1px solid #6B7280; border-radius: 8px; background: #FFFFFF; font: inherit; cursor: pointer">แจ้งลูกค้า</button>
+              <button type="button" style="height: 40px; padding: 0 12px; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFFFFF; color: #4B5563; font: inherit; cursor: pointer">ทิ้ง</button>
+            </li>
+          </ul>
+        </section>
+
+        <section aria-labelledby="h-aic" style="flex: 1 1 460px; min-width: 0; border: 1px solid #E5E7EB; border-radius: 12px; background: #FFFFFF; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px"><h2 id="h-aic" style="margin: 0; font-size: 17px; font-weight: 600">AI: ต้นทุนและคุณภาพ</h2><span style="font-size: 13px; color: #4B5563">ใช้งบไป 58% · ผ่านไป 63% ของเดือน</span></div>
+          <sc-raw-table style="width: 100%; border-collapse: collapse; font-size: 13px">
+            <sc-raw-thead><sc-raw-tr style="color: #4B5563; text-align: left"><sc-raw-th scope="col" style="padding: 4px 8px 6px 0; font-weight: 600">โมเดล / งาน</sc-raw-th><sc-raw-th scope="col" style="padding: 4px 8px 6px; font-weight: 600; text-align: right">สัดส่วนครั้ง</sc-raw-th><sc-raw-th scope="col" style="padding: 4px 0 6px 8px; font-weight: 600; text-align: right">สัดส่วนต้นทุน</sc-raw-th></sc-raw-tr></sc-raw-thead>
+            <sc-raw-tbody>
+              <sc-raw-tr style="border-top: 1px solid #E5E7EB"><sc-raw-td style="padding: 8px 8px 8px 0">Claude Haiku 4.5 · ตอบคำถามทั่วไป</sc-raw-td><sc-raw-td style="padding: 8px; text-align: right">82%</sc-raw-td><sc-raw-td style="padding: 8px 0 8px 8px; text-align: right">46%</sc-raw-td></sc-raw-tr>
+              <sc-raw-tr style="border-top: 1px solid #E5E7EB"><sc-raw-td style="padding: 8px 8px 8px 0">Claude Sonnet 4.6 · สรุปงานและเรื่องยาก</sc-raw-td><sc-raw-td style="padding: 8px; text-align: right">18%</sc-raw-td><sc-raw-td style="padding: 8px 0 8px 8px; text-align: right">54%</sc-raw-td></sc-raw-tr>
+            </sc-raw-tbody>
+          </sc-raw-table>
+          <h3 style="margin: 4px 0 0; font-size: 15px; font-weight: 600">ผลทดสอบคุณภาพรอบล่าสุด (ทุกครั้งก่อน deploy)</h3>
+          <ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 13px">
+            <li style="padding: 10px 12px; border-radius: 8px; background: #F9FAFB"><strong style="display: block; font-size: 18px">92%</strong>ตอบถูกจากชุดคำถาม 120 ข้อ</li>
+            <li style="padding: 10px 12px; border-radius: 8px; background: #F9FAFB"><strong style="display: block; font-size: 18px">0 ครั้ง</strong>ตอบนอกฐานความรู้ของบริษัท</li>
+            <li style="padding: 10px 12px; border-radius: 8px; background: #F9FAFB"><strong style="display: block; font-size: 18px">14 / 14</strong>ข้อความหลอกให้ AI ทำผิดกติกา ถูกกันได้</li>
+            <li style="padding: 10px 12px; border-radius: 8px; background: #F9FAFB"><strong style="display: block; font-size: 18px">0 ครั้ง</strong>ข้อมูลข้ามบริษัทในคำตอบ</li>
+          </ul>
+          <p style="margin: 0; font-size: 13px; color: #4B5563">ค่า server และบริการเดือนนี้: ฿ [ค่าใช้จ่ายจริง] · ตั้งเตือนเมื่อเกิน 80% ของงบ</p>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1200}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+
+
+</body></html>

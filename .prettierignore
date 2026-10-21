@@ -1,0 +1,8 @@
+pnpm-lock.yaml
+docs/design/
+**/gen/
+**/generated/
+**/.next/
+**/public/mockServiceWorker.js
+**/playwright-report/
+**/test-results/

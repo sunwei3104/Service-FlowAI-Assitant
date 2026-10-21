@@ -1,0 +1,27 @@
+{
+  "name": "@serviceflow/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "API contracts (OpenAPI = single source of truth) + generated TS types + shared HTTP helpers",
+  "exports": {
+    "./api": "./gen/ts/api.d.ts",
+    "./console": "./gen/ts/console.d.ts",
+    "./http": "./src/http.ts"
+  },
+  "scripts": {
+    "gen": "openapi-typescript openapi.yaml -o gen/ts/api.d.ts && openapi-typescript console.openapi.yaml -o gen/ts/console.d.ts",
+    "lint:spec": "redocly lint openapi.yaml console.openapi.yaml",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "openapi-fetch": "0.17.0"
+  },
+  "devDependencies": {
+    "@redocly/cli": "2.67.1",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}

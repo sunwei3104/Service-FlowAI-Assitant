@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "appName": "ServiceFlow AI",
+    "titleTemplate": "%s · ServiceFlow AI"
+  },
+  "common": {
+    "sampleData": "ข้อมูลตัวอย่าง",
+    "loading": "กำลังโหลด…",
+    "retry": "ลองอีกครั้ง",
+    "backHome": "กลับหน้าหลัก",
+    "requestId": "รหัสอ้างอิง"
+  },
+  "states": {
+    "comingSoonTitle": "เร็ว ๆ นี้",
+    "comingSoonDescription": "หน้านี้กำลังอยู่ระหว่างออกแบบ จะเปิดใช้งานในเวอร์ชันถัดไป",
+    "errorTitle": "โหลดข้อมูลไม่สำเร็จ",
+    "errorDescription": "เกิดข้อผิดพลาดชั่วคราว ลองใหม่อีกครั้ง ถ้ายังไม่ได้ให้แจ้งทีมงานพร้อมรหัสอ้างอิง",
+    "forbiddenTitle": "ไม่มีสิทธิ์เข้าถึง",
+    "forbiddenDescription": "บัญชีของคุณไม่มีสิทธิ์ดูหน้านี้ ติดต่อ Admin ของบริษัทถ้าต้องการสิทธิ์เพิ่ม",
+    "notFoundTitle": "ไม่พบหน้านี้",
+    "notFoundDescription": "ลิงก์อาจไม่ถูกต้อง หรือข้อมูลนี้ถูกลบไปแล้ว",
+    "tenantNotFoundTitle": "ไม่พบบริษัทนี้ในบัญชีของคุณ",
+    "tenantNotFoundDescription": "ตรวจลิงก์อีกครั้ง หรือขอคำเชิญจาก Admin ของบริษัท",
+    "pendingTitle": "หน้านี้ยังไม่ได้สร้างตามแบบ",
+    "pendingDescription": "โครงสร้างและ service พร้อมแล้ว รอสร้าง UI ตามแบบ {design}"
+  },
+  "shell": {
+    "brandName": "ServiceFlow AI",
+    "brandTagline": "Service desk ผ่าน LINE",
+    "mainNav": "เมนูหลัก",
+    "planLabel": "แพ็กเกจ {plan}",
+    "searchLabel": "ค้นหา",
+    "searchPlaceholder": "ค้นหาเลข Ticket, รหัสเครื่อง, ชื่อลูกค้า",
+    "createTicket": "สร้าง Ticket",
+    "notifications": "การแจ้งเตือน {count, plural, =0 {ไม่มีรายการใหม่} other {# รายการ}}",
+    "myAccount": "บัญชีของฉัน: {name}",
+    "switchTenant": "เปลี่ยนบริษัท",
+    "ticketsBadge": "{count} งานใหม่ที่ยังไม่มอบหมาย"
+  },
+  "roles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "agent": "ช่าง (Agent)",
+    "viewer": "ผู้ดูอย่างเดียว"
+  },
+  "nav": {
+    "overview": "ภาพรวม",
+    "tickets": "Ticket",
+    "assets": "เครื่อง / อุปกรณ์",
+    "knowledge": "ฐานความรู้",
+    "line": "LINE OA",
+    "reports": "รายงาน",
+    "team": "ทีมงานและสิทธิ์",
+    "settings": "ตั้งค่า"
+  },
+  "fieldNav": {
+    "label": "เมนูช่าง",
+    "jobs": "งานของฉัน",
+    "scan": "สแกน QR เครื่อง",
+    "history": "ประวัติ",
+    "account": "บัญชี"
+  },
+  "pages": {
+    "signIn": "เข้าสู่ระบบ",
+    "overview": "ภาพรวมวันนี้",
+    "tickets": "Ticket",
+    "ticket": "รายละเอียด Ticket",
+    "assets": "เครื่อง / อุปกรณ์",
+    "knowledge": "ฐานความรู้",
+    "line": "LINE OA และการรับแจ้ง",
+    "reports": "รายงานและการใช้งาน",
+    "team": "ทีมงานและสิทธิ์",
+    "settings": "ตั้งค่า",
+    "jobs": "งานของฉัน",
+    "job": "รายละเอียดงาน",
+    "scan": "สแกน QR เครื่อง",
+    "history": "ประวัติ",
+    "account": "บัญชี"
+  },
+  "auth": {
+    "signOut": "ออกจากระบบ"
+  },
+  "field": {
+    "greeting": "สวัสดี {name} · {date}"
+  },
+  "signIn": {
+    "aboutLabel": "เกี่ยวกับ ServiceFlow AI",
+    "headline": "รับแจ้งปัญหาจาก LINE<br></br>ส่งต่อช่าง ปิดงาน แจ้งลูกค้า<br></br>ในที่เดียว",
+    "lead": "สำหรับธุรกิจที่ดูแลเครื่องหรืออุปกรณ์หลายจุด ทีมงานเห็นทุกงานพร้อมกัน ลูกค้าไม่ต้องโทรตาม",
+    "feature1Title": "ลูกค้าแจ้งผ่าน LINE ที่ใช้อยู่แล้ว",
+    "feature1Body": "สแกน QR ที่เครื่อง ระบบรู้ทันทีว่าเครื่องไหน",
+    "feature2Title": "AI ตอบเรื่องง่าย ส่งต่อเรื่องยาก",
+    "feature2Body": "ตอบจากคู่มือของบริษัทคุณเท่านั้น",
+    "feature3Title": "ข้อมูลแต่ละบริษัทแยกขาดจากกัน",
+    "feature3Body": "เข้ารหัสทั้งตอนส่งและตอนเก็บ มีบันทึกทุกการเข้าถึง",
+    "copyright": "© 2569 ServiceFlow AI",
+    "title": "เข้าสู่ระบบ",
+    "workspace": "พื้นที่ทำงาน:",
+    "changeCompany": "เปลี่ยนบริษัท",
+    "withLine": "เข้าสู่ระบบด้วย LINE",
+    "withGoogle": "เข้าสู่ระบบด้วย Google",
+    "technicianHint": "ช่างใช้ปุ่ม LINE แล้วระบบพาไปหน้า <link>งานของฉัน</link> ให้อัตโนมัติ · ยังไม่มีบัญชี ขอคำเชิญจาก Admin ของบริษัท",
+    "noPasswordTitle": "ระบบไม่เก็บรหัสผ่าน",
+    "noPasswordBody": "ยืนยันตัวตนผ่านบัญชี LINE หรือ Google ที่ใช้อยู่แล้ว แนะนำให้เปิดยืนยัน 2 ขั้นในบัญชีนั้น",
+    "idleTimeout": "ไม่ได้ใช้งาน 12 ชั่วโมง ระบบออกจากระบบให้อัตโนมัติ (บริษัทตั้งให้สั้นกว่านี้ได้)"
+  }
+}
