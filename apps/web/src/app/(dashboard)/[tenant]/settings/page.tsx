@@ -1,8 +1,9 @@
+import { PageMain } from '@serviceflow/ui/shell';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
-import { ComingSoon } from '@/components/coming-soon';
 import { RequirePermission } from '@/components/require-permission';
+import { SettingsTabs } from '@/features/settings/components/settings-tabs';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('pages');
@@ -13,7 +14,10 @@ export default async function Page() {
   const t = await getTranslations('pages');
   return (
     <RequirePermission permission="team.manage">
-      <ComingSoon title={t('settings')} />
+      <PageMain>
+        <h1 className="text-page-title m-0">{t('settings')}</h1>
+        <SettingsTabs />
+      </PageMain>
     </RequirePermission>
   );
 }
