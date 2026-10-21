@@ -36,6 +36,17 @@
 | D9  | ฟอนต์                                 | `next/font/google` (self-host ตอน build) IBM Plex Sans Thai + IBM Plex Mono ผูกกับ token `--font-sans/--font-mono`                                                                             | ผู้พัฒนา                     | สเปค            |
 | D10 | ไลบรารีตรวจ JWT ของ Cloudflare Access | `jose` (คอนโซลต้องตรวจ aud/iss ทุกคำขอ — แผน §22.3) fail-closed                                                                                                                                | ผู้พัฒนา                     | แผน §22.3       |
 
+| D11 | ขนาดตัวอักษร (Q1) | ใช้ชุดเดียว 12, 13, 14, 15, 17, 20, 22, 26, 28, 30, 34, 36 px ชื่อ caption, body-sm, body, body-lg, card-title, mobile-title, section-title, page-title, auth-title, kpi-sm, kpi, display (+ code). ค่าอื่นปัดเข้าใกล้สุด: 16→15, 18→17, 21→20, 24→22, 32→30. line-height ดึงจากแบบ. ห้าม `text-[..px]` (สคริปต์ตรวจ) | เจ้าของโปรเจกต์ 2026-10-22 | tokens.json v3 |
+| D12 | สีนอก tokens บนหน้าช่าง (Q2) | ไม่เพิ่ม token: จุดแจ้งเตือนบน header เข้ม = `danger`, สวิตช์ "พร้อมรับงานใหม่" = `success` | เจ้าของโปรเจกต์ | — |
+| D13 | เมนูคอนโซล "การเข้าช่วยเหลือ", "Audit log" (Q3) | หน้า "เร็ว ๆ นี้" (อยู่ใน Sprint 5) | เจ้าของโปรเจกต์ | แผน §22.7 |
+| D14 | Pagination (Q4) | cursor ตามสเปค ไม่มีปุ่มเลขหน้า มีแค่ "ก่อนหน้า / ถัดไป" + "แสดง 1–10 จาก 23 งาน" (API คืน `total`, `prevCursor`) บนมือถือใช้ปุ่ม "โหลดเพิ่ม" | เจ้าของโปรเจกต์ | แผน §7.2 |
+| D15 | ชื่อบริษัทบนหน้า sign-in (Q5) | ไม่มี endpoint สาธารณะ ไม่มี `?tenant=` ไม่มีลิงก์ "เปลี่ยนบริษัท" แสดงชื่อเฉพาะเมื่อมาจากลิงก์คำเชิญที่ token ถูกต้อง (`POST /invitation-preview` ส่ง token ใน body) เลือกบริษัทหลัง login ผ่านตัวสลับใน sidebar | เจ้าของโปรเจกต์ | — |
+| D16 | State machine ของ Ticket (Q9) | new→assigned/in_progress/resolved · assigned→in_progress/new · in_progress→waiting/resolved/assigned · waiting→in_progress/resolved · resolved→in_progress (ภายใน 7 วัน Admin/Owner หรือลูกค้าตอบว่ายังไม่หาย). Agent เฉพาะงานตน; resolved ต้องมี note (+รูปถ้าประเภทบังคับ); waiting ต้องมีเหตุผล; ทุกการเปลี่ยนลง ticket_events. โค้ด: `features/tickets/state-machine.ts` (UI + mock ใช้ร่วม) | เจ้าของโปรเจกต์ | — |
+| D17 | ส่วนที่ไม่มีแบบ (Q6, Q7, Q12) | กระดิ่งซ่อน (แจ้งทีมงานทาง LINE ผ่าน Outbox) · เมนูโปรไฟล์ = ชื่อ+อีเมล+บทบาท, สลับบริษัท (ถ้ามีหลายบริษัท), ออกจากระบบ, ออกจากระบบทุกอุปกรณ์ · หน้า Passkey คอนโซลสไตล์ SignIn บน console-navy: (ก) ลงทะเบียนครั้งแรกด้วย bootstrap code ใช้ครั้งเดียวจาก CLI ของ api (ข) ยืนยัน · ผิด 3 ครั้งล็อก 15 นาที (บังคับที่ server) | เจ้าของโปรเจกต์ | — |
+| D18 | ความไม่สม่ำเสมอของแบบ (Q8, Q10) | ตัวย่อ = พยัญชนะ 2 ตัวแรกของชื่อต้น (นภา→นภ, ทินกร→ทน, สมชาย→สม, วิชัย→วช) อังกฤษ = อักษรแรกชื่อ+นามสกุล · เมนู "ตั้งค่า" → `/[tenant]/settings` มีแท็บ ข้อมูลบริษัท / แพ็กเกจ / โปรไฟล์ เป็น "เร็ว ๆ นี้" ไม่ลิงก์ซ้ำ LINE OA (Owner/Admin เห็น) | เจ้าของโปรเจกต์ | — |
+| D19 | ข้อที่เหลือ (Q11, Q13) | ใช้ค่าที่เสนอ: ระยะ/ความกว้างที่ไม่อยู่ใน tokens ใช้ค่าตามแบบ (ไม่ใช่สี/ขนาดตัวอักษร) · ชื่อ cookie CSRF `sf_csrf` / `sf_console_csrf` รอ backend ยืนยัน. ข้อที่กระทบความปลอดภัย/ข้อมูลลูกค้าต้องถามก่อนเสมอ | เจ้าของโปรเจกต์ | — |
+| D20 | Git | commit ด้วยอีเมล sunmai3104@gmail.com · remote `sunwei3104/Service-FlowAI-Assitant` · gitleaks ก่อน commit · กิ่งละหน้า · Conventional Commits | เจ้าของโปรเจกต์ | — |
+
 ### 2.1 การแมปคลาสของ shadcn → tokens (อัตโนมัติด้วย `ui:add`)
 
 shadcn ใช้คลาสมาตรฐาน Tailwind ที่ถูกปิดไป จึงแปลงเป็น token ที่ใกล้ที่สุด (`packages/ui/scripts/shadcn-postprocess.mjs`):
@@ -136,7 +147,7 @@ ServiceFlowAiAssitant/
 
 ## 4. กติกา (ห้ามละเมิด)
 
-1. **สี/ฟอนต์/ระยะ/มุม/เงา มาจาก tokens เท่านั้น** — ห้าม hex/rgb, ห้าม `bg-blue-500`, ห้าม `bg-[#...]`. เจอสีที่ไม่มีใน tokens → **ถามเจ้าของโปรเจกต์ก่อน** แล้วเพิ่มใน `tokens.json` → `pnpm gen`
+1. **สี/ฟอนต์/ระยะ/มุม/เงา มาจาก tokens เท่านั้น** — ห้าม hex/rgb, ห้าม `bg-blue-500`, ห้าม `bg-[#...]`, ห้าม `text-[16px]` (ขนาดอื่นในแบบปัดตาม D11). เจอสีที่ไม่มีใน tokens → **ถามเจ้าของโปรเจกต์ก่อน** แล้วเพิ่มใน `tokens.json` → `pnpm gen`
 2. **ห้ามคัดลอก inline style จากแบบตรง ๆ** แปลงเป็น Tailwind class ที่ผูก token
 3. **เรียก API ผ่าน `src/lib/api/client.ts` เท่านั้น** (ESLint ห้าม `fetch` ตรง) และเรียกจาก **service ใน `features/<domain>/api.ts`** — component ไม่เรียก `api.GET` เอง
 4. **แก้ API เริ่มที่ spec** (`packages/contracts/*.yaml`) → `pnpm gen` → แก้ service/mock → แก้หน้า. ห้ามแก้ `gen/` มือ
@@ -160,7 +171,9 @@ pnpm install
 cp apps/web/.env.example apps/web/.env.local          # (ทำไว้แล้ว) mock เปิดอยู่
 cp apps/console/.env.example apps/console/.env.local
 pnpm dev           # web :3000 + console :3001
-# เปิด http://localhost:3000/sign-in?tenant=smartvend  → กด "เข้าสู่ระบบด้วย LINE" (mock) → /smartvend
+# เปิด http://localhost:3000/sign-in  → กด "เข้าสู่ระบบด้วย LINE" (mock) → /smartvend
+# ลิงก์คำเชิญ (mock): http://localhost:3000/sign-in?invite=mock-invite-token-smartvend-0001
+# Passkey คอนโซล: http://localhost:3001/passkey
 # ดูมุมมองช่าง: http://localhost:3000/smartvend/jobs
 # เปลี่ยนผู้ใช้ mock เป็นช่าง: แก้ mockSession ใน apps/web/src/mocks/fixtures/people.ts
 ```
@@ -210,27 +223,13 @@ pnpm dev           # web :3000 + console :3001
 
 ---
 
-## 7. คำถามค้าง (ต้องให้เจ้าของโปรเจกต์ตัดสิน)
+## 7. คำถามค้าง
 
-| #   | คำถาม                                                                                                                                                                                                         | ผลกระทบ                             | ตอนนี้ทำไว้แบบไหน                                                                                          |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Q1  | ขนาดตัวอักษรในแบบ **11 ค่าไม่อยู่ใน tokens**: 15, 16, 18, 20, 21, 22, 24, 28, 30, 32, 36px (tokens มีแค่ 12/13/14/17/26/34) — เพิ่มเป็น type style ใน tokens.json ไหม?                                        | ทุกหน้า                             | ใช้ค่าตรง `text-[16px]` ชั่วคราวเฉพาะที่จำเป็น (shell, SignIn) พร้อมคอมเมนต์                               |
-| Q2  | **สี 2 ค่าไม่อยู่ใน tokens** (หน้า TechJobs): `#F87171` จุดแจ้งเตือนบน header ดำ, `#22C55E` สวิตช์ "พร้อมรับงานใหม่" — เพิ่ม token หรือใช้ token เดิม (`danger-ink` dark / `success`)?                        | TechJobs                            | ยังไม่ทำหน้า                                                                                               |
-| Q3  | เมนูคอนโซล "การเข้าช่วยเหลือ" และ "Audit log" ไม่มีแบบ (ในแบบลิงก์ไป OpsTenantDetail / OpsSystem) — ให้เป็น "เร็ว ๆ นี้" เหมือนข้ออื่นไหม? (แผน §22.6 มีหน้า `audit`)                                         | console                             | ทำเป็น "เร็ว ๆ นี้" ไว้ก่อน                                                                                |
-| Q4  | หน้า Tickets ในแบบใช้ **เลขหน้า** ("แสดง 1–10 จาก 23", 1 2 3) แต่แผน §7.2 กำหนด **cursor pagination** (ข้ามไปหน้า 3 ไม่ได้) — ใช้แบบไหน?                                                                      | Tickets, Assets, Knowledge, Tenants | spec เป็น cursor ตามแผน                                                                                    |
-| Q5  | หน้าเข้าสู่ระบบโชว์ชื่อบริษัทก่อน login ต้องมี endpoint สาธารณะ (ร่างไว้ `GET /workspaces/{slug}/public`) — มีความเสี่ยงให้คนเดาชื่อบริษัทได้ (ต้อง rate-limit) รับได้ไหม หรือให้ลิงก์เชิญฝังชื่อบริษัทมาเอง? | SignIn                              | ร่าง endpoint + mock                                                                                       |
-| Q6  | กระดิ่งแจ้งเตือน (แบบโชว์ "3 รายการ") — แผนไม่มี API การแจ้งเตือน ต้องการไหม/แสดงอะไร?                                                                                                                        | Shell                               | ปุ่มไม่มีตัวเลข                                                                                            |
-| Q7  | เมนูของปุ่มโปรไฟล์ (มุมขวาบน) ไม่มีแบบ — มีอะไรบ้าง?                                                                                                                                                          | Shell                               | มีแค่ "ออกจากระบบ" (จำเป็นต้องมีทางออกจากระบบ)                                                             |
-| Q8  | ตัวย่อชื่อในแบบไม่สม่ำเสมอ (นภา→นภ, ทินกร→ทก, สมาร์ทเวนด์→สว) — ใช้กฎไหน? หรือให้ backend ส่งมา                                                                                                               | Shell                               | กฎ "พยัญชนะ 2 ตัวแรก"                                                                                      |
-| Q9  | **State machine ของ Ticket** (เปลี่ยนจากสถานะไหนไปไหนได้) แผนระบุว่ามีแต่ไม่ได้ให้ตาราง                                                                                                                       | Ticket, ช่าง                        | mock ตรวจแค่: ต้อง If-Match, ห้ามเปลี่ยนเป็นสถานะเดิม, รอ = ต้องระบุเหตุผล, ปิดงานต้องมีรูปถ้าประเภทบังคับ |
-| Q10 | เมนู "ตั้งค่า" ในแบบลิงก์ไป LineSettings (ซ้ำกับ LINE OA) — ตอนนี้เป็น "เร็ว ๆ นี้" ตาม D4 ใครเห็นเมนูนี้ได้ (ตอนนี้ Owner/Admin)?                                                                            | Shell                               | Owner/Admin                                                                                                |
-| Q11 | ค่าบางอย่างในแบบไม่อยู่ใน tokens แต่ไม่ใช่สี: max-width 1240px (หน้า Main; tokens = 1320), radius 6px (ชิปบริษัท), ระยะ 14/26/38px — ใช้ค่าตามแบบตรง ๆ (arbitrary) ได้ไหม หรือปัดเข้า scale?                  | หลายหน้า                            | ใช้ค่าตามแบบ                                                                                               |
-| Q12 | หน้า "ยืนยัน Passkey" ของคอนโซลไม่มีแบบ (แผน §22.3 บังคับ)                                                                                                                                                    | console                             | แสดง ForbiddenState "ต้องยืนยันตัวตนด้วย Passkey"                                                          |
-| Q13 | ชื่อ cookie CSRF (`sf_csrf`, `sf_console_csrf`) — แผนบอกแค่ double-submit ไม่ได้ระบุชื่อ                                                                                                                      | backend                             | ตั้งชื่อไว้ใน `config/api.ts` รอ backend ยืนยัน                                                            |
+ตอบครบแล้ว Q1–Q13 (2026-10-22) → ดู D11–D19 ใน §2 ยังไม่มีคำถามค้างใหม่
 
 ### Endpoint ที่หน้าบ้านเพิ่มใน spec (ไม่อยู่ในตาราง 17/18 ของแผน — `x-draft-note`)
 
-`PUT /me/availability`, `GET /tickets/counts`, `GET /tickets/export`, `POST /tickets/bulk-assign`, `GET /tickets/{id}/assignee-suggestions`, `PUT /imports/{id}/mapping`, `POST /imports/{id}/confirm`, `GET /reports/export`, `GET /workspaces/{slug}/public`, console `GET /me`, `GET /tenants/{id}/support-access-requests`, `GET /audit`
+`PUT /me/availability`, `POST /invitation-preview` (แทน `/workspaces/{slug}/public` ที่ตัดทิ้งตาม D15), `GET /tickets/counts`, `GET /tickets/export`, `POST /tickets/bulk-assign`, `GET /tickets/{id}/assignee-suggestions`, `PUT /imports/{id}/mapping`, `POST /imports/{id}/confirm`, `GET /reports/export`, console `GET /me`, `/auth/passkey/status`, `/auth/passkey/register/*`, `GET /tenants/{id}/support-access-requests`, `GET /audit`
 → ทั้งหมดมาจากสิ่งที่แบบต้องใช้ backend ต้องรีวิว
 
 ---
@@ -273,4 +272,5 @@ pnpm dev           # web :3000 + console :3001
 
 ## 10. Changelog
 
+- **2026-10-22 (2)** — ทำตามคำตอบ Q1–Q13 (D11–D20): type scale, state machine, invitation-only sign-in, เมนูบัญชี, ซ่อนกระดิ่ง, หน้าตั้งค่า, หน้า Passkey คอนโซล, pagination total
 - **2026-10-22** — สร้าง monorepo, tokens pipeline, ร่าง contracts ทั้ง 2 ไฟล์, service layer ครบทุก endpoint, MSW mock, shell ทั้ง 3 แบบ, หน้า SignIn, หน้า "เร็ว ๆ นี้", เทสต์ + CI + Docker
