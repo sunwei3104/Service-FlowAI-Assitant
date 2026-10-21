@@ -1495,6 +1495,8 @@ export interface components {
             topProblems: {
                 categoryName: string;
                 share: number;
+                /** @description The "อื่น ๆ" bucket (drawn in the neutral color) */
+                isOther: boolean;
             }[];
             slaBreached?: components["schemas"]["TicketRef"][];
             recentActivity: {

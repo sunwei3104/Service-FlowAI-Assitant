@@ -153,6 +153,22 @@ export const icons = {
       <path d="M12 12h8M12 3v18" />
     </Icon>
   ),
+  alertTriangle: (p: IconProps) => (
+    <Icon strokeWidth={2} {...p}>
+      <path d="M12 3l10 18H2z" />
+      <path d="M12 10v5M12 18v.01" />
+    </Icon>
+  ),
+  arrowRight: (p: IconProps) => (
+    <Icon strokeWidth={2} {...p}>
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </Icon>
+  ),
+  download: (p: IconProps) => (
+    <Icon strokeWidth={1.9} {...p}>
+      <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+    </Icon>
+  ),
   chevronDown: (p: IconProps) => (
     <Icon strokeWidth={2} {...p}>
       <path d="M6 9l6 6 6-6" />

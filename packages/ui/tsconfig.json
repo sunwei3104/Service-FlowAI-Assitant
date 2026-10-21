@@ -2,19 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "types": [
-      "vitest/globals",
-      "@testing-library/jest-dom"
-    ],
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
     "paths": {
-      "@serviceflow/ui/*": [
-        "./src/*"
-      ]
+      "@serviceflow/ui/*": ["./src/*"]
     }
   },
-  "include": [
-    "src",
-    "vitest.config.ts",
-    "vitest.setup.ts"
-  ]
+  "include": ["src", "vitest.config.ts", "vitest.setup.ts"]
 }

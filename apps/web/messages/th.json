@@ -108,5 +108,102 @@
     "company": "ข้อมูลบริษัท",
     "plan": "แพ็กเกจ",
     "profile": "โปรไฟล์"
+  },
+  "overview": {
+    "title": "ภาพรวมวันนี้",
+    "updated": "{date} · อัปเดตล่าสุด {time} น.",
+    "rangeLabel": "ช่วงเวลา",
+    "range": {
+      "today": "วันนี้",
+      "7d": "7 วัน",
+      "30d": "30 วัน"
+    },
+    "export": "ส่งออกรายงาน",
+    "slaAlert": "{count} งานเกินเวลา SLA",
+    "slaUnassigned": "{number} ยังไม่มีคนรับงาน {duration}",
+    "slaOverdue": "{number} เกินกำหนดแก้ไข {duration}",
+    "slaJoin": " และ ",
+    "slaLink": "ดูงานที่เกิน SLA",
+    "kpiNew": "งานใหม่ (ยังไม่มอบหมาย)",
+    "kpiNewDetail": "เข้ามาทาง LINE {line} · หน้าเว็บ {web}",
+    "kpiProgress": "กำลังดำเนินการ",
+    "kpiProgressDetail": "มอบหมายแล้ว {assigned} · ช่างกำลังทำ {working}",
+    "kpiWaiting": "รอข้อมูล / รออะไหล่",
+    "kpiWaitingDetail": "รอลูกค้าตอบ {customer} · รออะไหล่ {parts}",
+    "kpiResolved": "ปิดงานวันนี้",
+    "kpiResolvedDetail": "ทันเวลา SLA {met} จาก {total} งาน",
+    "attentionTitle": "งานที่ต้องดูตอนนี้",
+    "attentionAll": "ดู Ticket ทั้งหมด",
+    "attentionEmpty": "ไม่มีงานที่ต้องดูตอนนี้",
+    "colNumber": "เลขที่",
+    "colProblem": "ปัญหา / เครื่อง",
+    "colStatus": "สถานะ",
+    "colAssignee": "ผู้รับผิดชอบ",
+    "colSla": "SLA",
+    "unassigned": "ยังไม่มอบหมาย",
+    "noAsset": "ไม่ระบุเครื่อง",
+    "openTitle": "งานที่เปิดอยู่",
+    "openAria": "ใหม่ {new}, มอบหมายแล้ว {assigned}, กำลังดำเนินการ {progress}, รอข้อมูลหรืออะไหล่ {waiting}",
+    "openNew": "ใหม่",
+    "openAssigned": "มอบหมายแล้ว",
+    "openProgress": "กำลังทำ",
+    "openWaiting": "รอข้อมูล/อะไหล่",
+    "lineTitle": "LINE OA",
+    "lineStatus": {
+      "connected": "เชื่อมต่อปกติ",
+      "error": "เชื่อมต่อผิดพลาด",
+      "not_connected": "ยังไม่เชื่อมต่อ"
+    },
+    "lineAccount": "บัญชี",
+    "lineLastMessage": "รับข้อความล่าสุด",
+    "lineToday": "ข้อความวันนี้",
+    "lineTodayValue": "{messages} ข้อความ · เปิดงาน {tickets}",
+    "lineSettings": "ตั้งค่า LINE OA และข้อความตอบกลับ",
+    "aiTitle": "คำตอบ AI เดือนนี้",
+    "aiQuota": "/ {limit} ครั้งในแพ็กเกจ",
+    "aiQuotaUnlimited": "ครั้ง (ไม่จำกัด)",
+    "aiMeter": "ใช้โควตา AI",
+    "aiSplit": "<good>{self}</good> ตอบได้เองจากฐานความรู้ · <strong>{handoff}</strong> ส่งต่อให้เจ้าหน้าที่",
+    "aiAddKnowledge": "เพิ่มคำตอบในฐานความรู้",
+    "weekTitle": "Ticket 7 วันล่าสุด",
+    "weekTotal": "รวม {count} งาน",
+    "weekAria": "จำนวน Ticket ต่อวัน: {list}",
+    "today": "วันนี้",
+    "topTitle": "ปัญหาที่พบบ่อย",
+    "topRange": "30 วันล่าสุด",
+    "activityTitle": "ความเคลื่อนไหวล่าสุด",
+    "activityEmpty": "ยังไม่มีความเคลื่อนไหว",
+    "sectionError": "โหลดส่วนนี้ไม่สำเร็จ"
+  },
+  "tickets": {
+    "status": {
+      "new": "ใหม่",
+      "assigned": "มอบหมายแล้ว",
+      "in_progress": "กำลังดำเนินการ",
+      "resolved": "แก้ไขแล้ว"
+    },
+    "waiting": {
+      "customer": "รอลูกค้าตอบ",
+      "parts": "รออะไหล่",
+      "unknown": "รอข้อมูล"
+    },
+    "sla": {
+      "breached": "เกิน {duration}",
+      "remaining": "เหลือ {duration}",
+      "paused": "หยุดนับระหว่างรอ",
+      "met": "ปิดทันเวลา",
+      "missed": "ปิดเกินเวลา",
+      "none": "—"
+    }
+  },
+  "time": {
+    "minutes": "{count} นาที",
+    "hours": "{count} ชม.",
+    "days": "{count} วัน",
+    "minutesAgo": "{count} นาทีที่แล้ว",
+    "hoursAgo": "{count} ชั่วโมงที่แล้ว",
+    "daysAgo": "{count} วันที่แล้ว",
+    "justNow": "เมื่อสักครู่",
+    "weekdayShort": "อา.|จ.|อ.|พ.|พฤ.|ศ.|ส."
   }
 }

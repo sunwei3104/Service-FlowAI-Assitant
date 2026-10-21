@@ -86,6 +86,13 @@ export const ticketHandlers = [
         ),
       );
     }
+    const sort = url.searchParams.get('sort');
+    if (sort === 'slaDueAt' || sort === '-slaDueAt') {
+      // Most urgent first; tickets without a running SLA (paused / none) go last.
+      const due = (t: Schemas['Ticket']) =>
+        t.sla.dueAt ? new Date(t.sla.dueAt).getTime() : Number.POSITIVE_INFINITY;
+      items = [...items].sort((a, b) => (sort === 'slaDueAt' ? due(a) - due(b) : due(b) - due(a)));
+    }
     return HttpResponse.json(paginate(items, url));
   }),
 

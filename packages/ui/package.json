@@ -11,7 +11,9 @@
     "./states": "./src/components/states/index.ts",
     "./feedback/*": "./src/components/feedback/*.tsx",
     "./shell": "./src/components/shell/index.ts",
-    "./icons": "./src/components/icons/index.tsx"
+    "./icons": "./src/components/icons/index.tsx",
+    "./display/*": "./src/components/display/*.tsx",
+    "./data/*": "./src/components/data/*.tsx"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
